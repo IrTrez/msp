@@ -146,6 +146,41 @@ class Body:
 
     # Vallado algorithm 9
     def RVtoCOE(self, r,v):
-        print(r)
-        print(v)
-        pass
+        I=[1,0,0]
+        J=[0,1,0]
+        K=[0,0,1]
+        vnorm = np.sqrt(v.dot(v)) #is this the same as vnorm=np.sqrt(v[0]**2+v[1]**2)
+        rnorm = np.sqrt(r.dot(r))
+
+        h=np.cross(r,v)
+        hnorm=np.sqrt(h.doth(h))
+
+        n=np.cross(K,h)
+        nnorm=np.sqrt(n.dot(n))
+
+        e=((vnorm2-self.mu/rnorm)*r-np.dot(r,v)*v)/(self.mu) #is a vector
+        enorm=np.sqrt(e.dot(e))
+        
+        if enorm == 0:
+            p=hnorm**2/self.mu
+            a=math.inf
+        else:
+            a=-self.mu/(2*(vnorm**2/2-self.mu/rnorm))
+
+        i=arccos(h[2]/hnorm)
+
+        Omega=acos(n[0]/nnorm) #acos should work here instead of np.arccos since Omega should not be an array
+        if n[1] < 0:
+            Omega=2*Pi()-Omega
+
+        omega=acos(np.dot(n,e)/(nnorm*enorm))
+        if e[2] < 0:
+            omega=2*Pi()-omega
+
+       nu=acos(np.dot(e,r)/(enorm*rnorm)) #nu=greek "v" used for poisson ratio
+        if np.dot(r,v) < 0:
+            nu=2*Pi()-nu
+        
+        return(p,a,e,i,Omega, omega,nu) 
+        
+        
