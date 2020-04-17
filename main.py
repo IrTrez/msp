@@ -146,4 +146,6 @@ class Body:
 
     # Vallado algorithm 9
     def RVtoCOE(self, r,v):
+        print(r)
+        print(v)
         pass
