@@ -3,9 +3,10 @@ from tqdm import tqdm as tqdm
 import math
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 # import pandas as pd #uncomment when exporting has been implemented.
+print("Fix the gdot")
 
 class Planet:
-    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter):
+    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere="false"):
         self.mu = gravitationalParameter
         self.muParent = parentGravitationalParameter
         self.r = radius
@@ -13,6 +14,10 @@ class Planet:
 
         self.rsoi = self.a * (self.mu/self.muParent)**0.4
         self.position = [0,0,0]
+
+        # Add atmospheric density model here
+        if atmosphere:
+            pass
 
 class Body:
     def __init__(self, parentBody, mass):
@@ -33,11 +38,11 @@ class Body:
         # True anomaly, normally theta now v
         if self.e < 1:
             E = self.findEccentricAnomaly()
-            self.v = math.acos((math.cos(E) - self.e) / (1 - e*math.cos(E)))
+            self.trueAnomaly = math.acos((math.cos(E) - self.e) / (1 - e*math.cos(E)))
             self.fpa = math.asin((self.e*math.sin(E))/math.sqrt(1 - (self.e)**2 * (math.cos(E))**2))
         else:
             H = self.findHyperbolicAnomaly()
-            self.v = math.acos((math.cosh(H) - self.e) / (1 - self.e*math.cosh(H)))
+            self.trueAnomaly = math.acos((math.cosh(H) - self.e) / (1 - self.e*math.cosh(H)))
             self.fpa = math.sqrt(((self.e)**2 - 1) / ((self.e)**2 * (math.cosh(H))**2) - 1)
         
     def findEccentricAnomaly(self):
@@ -131,10 +136,14 @@ class Body:
         gdot = 1 - ((chi**2 / rr) * c2)
 
         # print("test", gdot)
-        # print("fix the gdot")
+        
         rnew = (f * r) + (g * v)
         vnew = (fdot * r) + (gdot * v)
 
         succes = (f*gdot) - (fdot*g)
         # print("1 =", succes)
         return rnew, vnew
+
+    # Vallado algorithm 9
+    def RVtoCOE(self, r,v):
+        pass
