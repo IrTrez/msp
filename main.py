@@ -169,18 +169,40 @@ class Body:
 
         i=arccos(h[2]/hnorm)
 
-        Omega=acos(n[0]/nnorm) #acos should work here instead of np.arccos since Omega should not be an array
+        Omega=math.acos(n[0]/nnorm) #acos should work here instead of np.arccos since Omega should not be an array
         if n[1] < 0:
             Omega=2*Pi()-Omega
 
-        omega=acos(np.dot(n,e)/(nnorm*enorm))
+        omega=math.acos(np.dot(n,e)/(nnorm*enorm))
         if e[2] < 0:
             omega=2*Pi()-omega
 
-       nu=acos(np.dot(e,r)/(enorm*rnorm)) #nu=greek "v" used for poisson ratio
+        nu=math.acos(np.dot(e,r)/(enorm*rnorm)) #nu=greek "v" used for poisson ratio
         if np.dot(r,v) < 0:
             nu=2*Pi()-nu
         
-        return(p,a,e,i,Omega, omega,nu) 
+        omega_true=math.acos(e[1]/enorm)
+        if e[1] < 0:
+            omega_true=2*Pi()-omega_true
+
+        u=math.acos(np.dot(n,r)/(nnorm*rnorm))
+        if r[2] < 0:
+            u=2*Pi()-u
         
+        lambda_true=math.acos(r[0]/rnorm)
+        if r[1] < 0:
+            lambda_true=2*Pi()-lambda_true
+
+        return(p,a,e,i,Omega,omega,nu,omega_true,u,lambda_true) 
+        #RVtoCOE(self, r,v) index for:
+        # p=[0]
+        # a=[1]
+        # e=[2]
+        # i=[3]
+        # Omega=[4]
+        # omega=[5]
+        # nu=[6]
+        # omega_true=[7]
+        # u=[8]
+        # lambda_true=[9]      
         
