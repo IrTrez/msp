@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
-AU = 149.6e6 # km
+AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
 Mars = m.Planet(42800, 3402, 1.524 * AU, muSun)
@@ -18,10 +18,10 @@ spacecraft = m.Body(Mars, 100)
 # spacecraft.refreshKeplerOrbit(currentTime)
 # spacecraft.findEccentricAnomaly()
 
-ex24 = m.Body(Earth,100)
-ex24.initKeplerOrbit(11000,0.5, currentTime)
-r0 = np.array([1131.34, -2282.343, 6672.423])
-v0 = np.array([-5.64305, 4.30333, 2.42879])
+ex25 = m.Body(Earth, 100)
+# ex25.initKeplerOrbit(11000,0.5, currentTime)
+r0 = np.array([6524.834, 6862.875, 6448.296])
+v0 = np.array([4.901327, 5.533756, -1.976341])
 deltat = 40 * 60
 
-print(ex24.keplerTime(r0, v0, deltat))
+print(ex25.RVtoCOE(r0, v0))
