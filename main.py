@@ -252,7 +252,29 @@ class Body:
         return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
 
     # Vallado algorithm 10
-    def COEtoRV(self, p, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None):
+    def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None):
+        """Takes in keplerian elements and outputs carthesian position and velocity vectors
+        
+        Arguments:
+            p {float} -- semi-major axis
+            e {float} -- eccentricity
+            i {float} -- inclination [rad]
+            Omega {float} -- Big Omega [rad]
+            omega {float} -- argument of periapse [rad]
+            trueAnomaly {float} -- True Anomaly [rad]
+        
+        Keyword Arguments:
+            omega_true {[type]} -- [description] (default: {None})
+            u {[type]} -- [description] (default: {None})
+            lambda_true {[type]} -- [description] (default: {None})
+        
+        Returns:
+            [type] -- [description]
+        """
+
+        # Semi latus rectum this is different from source material where p is taken as input:
+        p = a (1 - e**2)
+
         # circular equatorial
         if e < 1 and i == 0:
             assert (lambda_true is not None), "Lambda_True is not given"
@@ -284,5 +306,4 @@ class Body:
 
         rijk = np.matmul(PQWtoIJKtransform, rpqw)
         vijk = np.matmul(PQWtoIJKtransform, vpqw)
-        # print(rijk)
         return rijk, vijk
