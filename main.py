@@ -39,12 +39,52 @@ class Body:
         self.mu = parentBody.mu
         self.m = mass
 
-    def initKeplerOrbit(self, semiMajorAxis, eccentricity, timeSincePeriapse):
+    def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
+        """Set up an orbit using keplerian elements
+        
+        Arguments:
+            semiMajorAxis {float} -- Semi-Major axis [km]
+            eccentricity {float} -- eccentricity
+            inclination {float} -- inclination [rad]
+            Omega {float} -- Big omega [rad]
+            omega {float} -- argument of periapse [rad]
+        
+        Keyword Arguments:
+            trueAnomaly {float} -- True Anomaly [rad] (default: {0})
+            useDegrees {boolean} -- Option to init angles with degrees  (default: {False})
+        """
+        if useDegrees:
+            i = math.radians(i)
+            Omega = math.radians(Omega)
+            omega = math.radians(omega)
+            trueAnomaly = math.radians(trueAnomaly)
+
         self.a = semiMajorAxis
         self.e = eccentricity
-        self.tp = timeSincePeriapse
+        self.i = inclination
+        self.Omega = Omega
+        self.omega = omega
+        self.trueAnomaly = trueAnomaly
+
+        self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
+    
+        # self.tp = timeSincePeriapse
+    def initPositionOrbit(self, r, v):
+        """Set up an orbit using carthesian position and velocity vectors
+        
+        Arguments:
+            r {numpy.ndarray} -- carthesian position vector
+            v {numpy.ndarray} -- carthesian velocity vector
+        """
+        self.r = r
+        self.v = v
+        self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly = self.RVtoCOE(self.r, self.v)
+
+
 
     def refreshKeplerOrbit(self, t):
+        # might be deprecated
+        print("refreshKeplerOrbit is deprecated")
         self.meanMotion = (self.mu/(self.a**3))
         self.meanAnomaly = self.meanMotion * (t - self.tp)
         if self.e == 1:
@@ -288,7 +328,7 @@ class Body:
         # Semi latus rectum this is different from source material where p is taken as input:
         # when a p is also given it uses p instead of a for calculations
         if p is None:
-            p = a (1 - e**2)
+            p = a * (1 - e**2)
 
         # circular equatorial
         if e < 1 and i == 0:
