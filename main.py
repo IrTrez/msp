@@ -52,6 +52,11 @@ class Body:
                                  ((self.e)**2 * (math.cosh(H))**2) - 1)
 
     def findEccentricAnomaly(self):
+        """Find eccentric anomaly taking the body's current keplerian values
+        
+        Returns:
+            float -- eccentric anomaly [rad]
+        """
         if (self.meanMotion > -1 * math.pi and self.meanMotion < 0)or self.meanMotion > math.pi:
             E = self.meanAnomaly - self.e
         else:
@@ -67,6 +72,11 @@ class Body:
         return E
 
     def findHyperbolicAnomaly(self):
+        """Find hyperbolic anomaly taking the body's current keplerian values
+        
+        Returns:
+            float -- hyperbolic anomaly [rad]
+        """
         if self.e < 1.6:
             if (self.meanMotion > -1 * math.pi and self.meanMotion < 0)or self.meanMotion > math.pi:
                 H = self.meanAnomaly - self.e
@@ -90,12 +100,16 @@ class Body:
                 break
         return H
 
-    # definition of psi Vallado 2-48
-    # def psi(self, UniversalVariable):
-    #     return UniversalVariable**2 / self.a
     # Vallado Algorithm 1 page 63
-
     def c2_c3(self, psi):
+        """Obtain c2 and c3 values used for the universal solution method of kepler's problem
+        
+        Arguments:
+            psi {float} -- psi value for universal solution method [rad]
+        
+        Returns:
+            float, float -- c2, c3
+        """
         if psi > 10e-6:
             c2 = (1 - math.cos(np.sqrt(psi))) / psi
             c3 = (math.sqrt(psi) - math.sin(np.sqrt(psi))) / np.sqrt(psi**3)
@@ -109,8 +123,17 @@ class Body:
 
     # Vallado algorithm 8 page 93 change of positions with time
     def keplerTime(self, r, v, dt):
-        # r: numpy array carthesian position
-        # v: numpy array velocities
+        """Returns new velocity and position vectors with change over time
+        
+        Arguments:
+            r {ndarray} -- Carthesian position vector [km]
+            v {ndarray} -- Carthesian velocity vector [km/s]
+            dt {float} -- Change in time
+        
+        Returns:
+            ndarray, ndarray -- new velocity and position vectors
+        """
+
         # We call the universal parameter chi (weird greek capital X)
         vnorm = np.sqrt(v.dot(v))
         rnorm = np.sqrt(r.dot(r))
@@ -152,13 +175,21 @@ class Body:
 
         rnew = (f * r) + (g * v)
         vnew = (fdot * r) + (gdot * v)
-
         succes = (f*gdot) - (fdot*g)
-        # print("1 =", succes)
+
         return rnew, vnew
 
     # Vallado algorithm 9
     def RVtoCOE(self, r, v):
+        """Converts carthesian position and velocity vectors to keplerian elements
+        
+        Arguments:
+            r {ndarray} -- Carthesian position vector
+            v {ndarray} -- Carthesian velocity vector
+        
+        Returns:
+            floats -- semi-latus rectum, semi-major axis, eccentricity, inclination, Omega, omega, True Anomaly, (True omega, u, true lambda) [km] [rad]
+        """
         I = [1, 0, 0]
         J = [0, 1, 0]
         K = [0, 0, 1]
@@ -197,9 +228,9 @@ class Body:
             omega = 2*math.pi-omega
 
         # nu=greek "v" used for poisson ratio
-        nu = math.acos(np.dot(e, r)/(enorm*rnorm))
+        trueAnomaly = math.acos(np.dot(e, r)/(enorm*rnorm))
         if np.dot(r, v) < 0:
-            nu = 2*math.pi-nu
+            trueAnomaly = 2*math.pi-trueAnomaly
         
         omega_true, lambda_true, u = None, None, None
         if enorm < 1 and i == 0:
@@ -217,16 +248,3 @@ class Body:
             if r[1] < 0:
                 lambda_true = 2*math.pi-lambda_true
 
-        print("hey")
-        return p, a, enorm, i, Omega, omega, nu, omega_true, u, lambda_true
-        # RVtoCOE(self, r,v) index for:
-        # p=[0]
-        # a=[1]
-        # e=[2]
-        # i=[3]
-        # Omega=[4]
-        # omega=[5]
-        # nu=[6]
-        # omega_true=[7]
-        # u=[8]
-        # lambda_true=[9]
