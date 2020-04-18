@@ -248,3 +248,4 @@ class Body:
             if r[1] < 0:
                 lambda_true = 2*math.pi-lambda_true
 
+        return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
