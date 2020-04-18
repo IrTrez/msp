@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm as tqdm
 import math
+from math import acos, cos, cosh, asin, sin,sinh
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 # import pandas as pd #uncomment when exporting has been implemented.
 print("Fix the gdot")
@@ -40,16 +41,16 @@ class Body:
         # True anomaly, normally theta now v
         if self.e < 1:
             E = self.findEccentricAnomaly()
-            self.trueAnomaly = math.acos(
-                (math.cos(E) - self.e) / (1 - e*math.cos(E)))
-            self.fpa = math.asin((self.e*math.sin(E)) /
-                                 math.sqrt(1 - (self.e)**2 * (math.cos(E))**2))
+            self.trueAnomaly = acos(
+                (cos(E) - self.e) / (1 - e*cos(E)))
+            self.fpa = asin((self.e*sin(E)) /
+                                 math.sqrt(1 - (self.e)**2 * (cos(E))**2))
         else:
             H = self.findHyperbolicAnomaly()
-            self.trueAnomaly = math.acos(
-                (math.cosh(H) - self.e) / (1 - self.e*math.cosh(H)))
+            self.trueAnomaly = acos(
+                (cosh(H) - self.e) / (1 - self.e*cosh(H)))
             self.fpa = math.sqrt(((self.e)**2 - 1) /
-                                 ((self.e)**2 * (math.cosh(H))**2) - 1)
+                                 ((self.e)**2 * (cosh(H))**2) - 1)
 
     def findEccentricAnomaly(self):
         """Find eccentric anomaly taking the body's current keplerian values
@@ -65,8 +66,8 @@ class Body:
         tolerance = 10e-10
         while True:
             lastE = E
-            E += (self.meanAnomaly - E + (self.e*math.sin(E))) / \
-                (1 - (self.e * math.cos(E)))
+            E += (self.meanAnomaly - E + (self.e*sin(E))) / \
+                (1 - (self.e * cos(E)))
             if abs(lastE - E) < tolerance:
                 break
         return E
@@ -94,8 +95,8 @@ class Body:
         tolerance = 10e-10
         while True:
             lastE = H
-            H += (H + self.meanAnomaly - (self.e*math.sinh(H))) / \
-                ((self.e * math.cos(H) - 1))
+            H += (H + self.meanAnomaly - (self.e*sinh(H))) / \
+                ((self.e * cos(H) - 1))
             if abs(lastE - H) < tolerance:
                 break
         return H
@@ -111,11 +112,11 @@ class Body:
             float, float -- c2, c3
         """
         if psi > 10e-6:
-            c2 = (1 - math.cos(np.sqrt(psi))) / psi
-            c3 = (math.sqrt(psi) - math.sin(np.sqrt(psi))) / np.sqrt(psi**3)
+            c2 = (1 - cos(np.sqrt(psi))) / psi
+            c3 = (math.sqrt(psi) - sin(np.sqrt(psi))) / np.sqrt(psi**3)
         elif psi < -10e-6:
-            c2 = (1 - math.cosh(np.sqrt(-psi)))/psi
-            c3 = (math.sinh(np.sqrt(-psi) - np.sqrt(-psi))) / np.sqrt((-psi)**3)
+            c2 = (1 - cosh(np.sqrt(-psi)))/psi
+            c3 = (sinh(np.sqrt(-psi) - np.sqrt(-psi))) / np.sqrt((-psi)**3)
         else:
             c2 = 0.5
             c3 = 1./6.
@@ -216,36 +217,72 @@ class Body:
             p = hnorm**2 / self.mu
             a = math.inf
 
-        i = math.acos(h[2]/hnorm)
+        i = acos(h[2]/hnorm)
 
         # acos should work here instead of np.arccos since Omega should not be an array
-        Omega = math.acos(n[0]/nnorm)
+        Omega = acos(n[0]/nnorm)
         if n[1] < 0:
             Omega = 2*math.pi-Omega
 
-        omega = math.acos(np.dot(n, e)/(nnorm*enorm))
+        omega = acos(np.dot(n, e)/(nnorm*enorm))
         if e[2] < 0:
             omega = 2*math.pi-omega
 
         # nu=greek "v" used for poisson ratio
-        trueAnomaly = math.acos(np.dot(e, r)/(enorm*rnorm))
+        trueAnomaly = acos(np.dot(e, r)/(enorm*rnorm))
         if np.dot(r, v) < 0:
             trueAnomaly = 2*math.pi-trueAnomaly
         
         omega_true, lambda_true, u = None, None, None
         if enorm < 1 and i == 0:
-            omega_true = math.acos(e[1]/enorm)
+            omega_true = acos(e[1]/enorm)
             if e[1] < 0:
                 omega_true = 2*math.pi-omega_true
         
         elif enorm == 0 and i != 0:
-            u = math.acos(np.dot(n, r)/(nnorm*rnorm))
+            u = acos(np.dot(n, r)/(nnorm*rnorm))
             if r[2] < 0:
                 u = 2*math.pi-u
 
         elif enorm == 0 and i == 0:
-            lambda_true = math.acos(r[0]/rnorm)
+            lambda_true = acos(r[0]/rnorm)
             if r[1] < 0:
                 lambda_true = 2*math.pi-lambda_true
 
         return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
+
+    # Vallado algorithm 10
+    def COEtoRV(self, p, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None):
+        # circular equatorial
+        if e < 1 and i == 0:
+            assert (lambda_true is not None), "Lambda_True is not given"
+            omega, Omega = 0.0, 0.0
+        
+        # circular inclined
+        elif e == 0 and i != 0:
+            assert (u is not None), "u is not given"
+            omega = 0.0
+            trueAnomaly = u
+
+        # elliptical equatorial
+        elif e == 0 and i == 0:
+            assert (u is not None), "omega_true is not given"
+            Omega = 0.0
+            omega = omega_true
+
+        rpqw = np.array([((p * cos(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
+                         ((p * sin(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
+                         0])
+
+        vpqw = np.array([-1 * np.sqrt(self.mu/p) * sin(trueAnomaly),
+                         np.sqrt(self.mu/p) * (e + cos(trueAnomaly)),
+                         0])
+
+        PQWtoIJKtransform = np.array([[cos(Omega) * cos(omega) - sin(Omega) * sin(omega) * cos(i), -cos(Omega) * sin(omega) - sin(Omega) * cos(omega) * cos(i), sin(Omega) * sin(i)],
+                                        [sin(Omega) * cos(omega) + cos(Omega) * sin(omega) * cos(i), -sin(Omega) * sin(omega) + cos(Omega) * cos(omega) * cos(i), -cos(Omega) * sin(i)],
+                                        [sin(omega) * sin(i), cos(omega) * sin(i), cos(i)]])
+
+        rijk = np.matmul(PQWtoIJKtransform, rpqw)
+        vijk = np.matmul(PQWtoIJKtransform, vpqw)
+        # print(rijk)
+        return rijk, vijk
