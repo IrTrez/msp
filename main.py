@@ -7,6 +7,18 @@ from math import acos, cos, cosh, asin, sin,sinh
 print("Fix the gdot")
 
 
+class Atmosphere:
+    def __init__(self, densityFunction = None, densityFile = None):
+        assert (densityFunction is None and densityFile is None), "Only one input method of atmosphere can be given"
+        assert (densityFunction is not None and densityFile is not None), "Multiple methods of atmosphere are given"
+        if densityFunction is not None:
+            #create dictionary with density per meter altitude. density in kg/m^3 altitude in km
+            pass
+        if densityFile is not None:
+            # take dictionary from density file
+            pass
+
+
 class Planet:
     def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere="false"):
         self.mu = gravitationalParameter
@@ -18,7 +30,7 @@ class Planet:
         self.position = [0, 0, 0]
 
         # Add atmospheric density model here
-        if atmosphere:
+        if atmosphere != False:
             pass
 
 
