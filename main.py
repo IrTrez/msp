@@ -252,11 +252,11 @@ class Body:
         return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
 
     # Vallado algorithm 10
-    def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None):
+    def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None, p = None):
         """Takes in keplerian elements and outputs carthesian position and velocity vectors
         
         Arguments:
-            p {float} -- semi-major axis
+            a {float} -- semi-major axis
             e {float} -- eccentricity
             i {float} -- inclination [rad]
             Omega {float} -- Big Omega [rad]
@@ -264,16 +264,19 @@ class Body:
             trueAnomaly {float} -- True Anomaly [rad]
         
         Keyword Arguments:
-            omega_true {[type]} -- [description] (default: {None})
-            u {[type]} -- [description] (default: {None})
-            lambda_true {[type]} -- [description] (default: {None})
+            omega_true {float} -- take omega true as input [rad] (default: {None})
+            u {float} -- take omega true as input [rad] (default: {None})
+            lambda_true {float} -- take omega true as input [rad] (default: {None})
+            p {float} -- Take semi latus rectum as an input instead of semi major axis
         
         Returns:
-            [type] -- [description]
+            r, v -- carthesian position and velocity vectors
         """
 
         # Semi latus rectum this is different from source material where p is taken as input:
-        p = a (1 - e**2)
+        # when a p is also given it uses p instead of a for calculations
+        if p is None:
+            p = a (1 - e**2)
 
         # circular equatorial
         if e < 1 and i == 0:
