@@ -35,10 +35,15 @@ class Planet:
 
 
 class Body:
-    def __init__(self, parentBody, mass):
+    def __init__(self, parentBody, mass, DragCoeff=0, surfaceArea=0):
         self.mu = parentBody.mu
         self.parentRadius = parentBody.r
         self.m = mass
+        self.CD = DragCoeff
+        self.surfaceArea = surfaceArea
+
+    def getDensity(self, altitude):
+        return 0.00005 #replace by interaction with atmosphere class later
 
     def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
         """Set up an orbit using keplerian elements
@@ -81,13 +86,19 @@ class Body:
         """
         self.r = r
         self.v = v
-        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
+        # self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
 
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
 
     def refreshByTimestep(self, dt):
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
+        self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
+        altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
+        if altitudenorm < 500:
+            vnorm = np.sqrt(vnew.dot(vnew))
+            adrag = -0.5 * self.getDensity(self.altitude) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
+            vnew += adrag * dt
         self.initPositionOrbit(rnew, vnew)
 
 

@@ -16,15 +16,18 @@ Mars = m.Planet(42800, 3402, 1.524 * AU, muSun)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun)
 
 
-p = 15067.790
-e = 0.53285
+p = 10067.790
+e = 0.58285
 i = math.radians(35)
 Omega = math.radians(30.89)
 omega = math.radians(53.38)
-trueAnomaly = math.radians(0)
+trueAnomaly = math.radians(40)
 a = p / (1 - e**2)
 
-initTest = m.Body(Earth, 100)
+CD = 1.2
+surfaceArea = 3.6**2 * math.pi
+
+initTest = m.Body(Earth, 100, CD, surfaceArea )
 initTest.initKeplerOrbit(a,e,i,Omega,omega,trueAnomaly)
 print(initTest.orbitalPeriod)
 
@@ -41,11 +44,11 @@ z = Earth.r * np.outer(np.ones(np.size(u)), np.cos(v))
 # Plot the surface
 ax.plot_wireframe(x, y, z, color='b')
 
-timestep = 1000
+timestep = 200
 rlist = []
 hlist = []
 parentradiuslist = []
-for deltat in tqdm(range(int(initTest.orbitalPeriod / timestep) + 1)):
+for deltat in tqdm(range(2 * int(initTest.orbitalPeriod / timestep) + 1)):
     initTest.refreshByTimestep(timestep)
     rlist.append(initTest.r)
     parentradius = (initTest.parentRadius * (initTest.r/np.sqrt((initTest.r).dot(initTest.r))))
@@ -68,7 +71,7 @@ plt.pause(1)
 for u in tqdm(range(len(rlist[0]))):
     # print(deltat)
     ax.plot(rlist[0][0:u], rlist[1][0:u], rlist[2][0:u], color="g")
-    ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
+    # ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
     plt.pause(0.000001)
     plt.clf
 plt.pause(5)
