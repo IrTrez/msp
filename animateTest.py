@@ -34,7 +34,7 @@ print(2 * int(initTest.orbitalPeriod/ 200))
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.set_aspect('equal')
+#ax.set_aspect('equal')
 
 
 # Sphere:
