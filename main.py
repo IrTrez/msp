@@ -37,6 +37,7 @@ class Planet:
 class Body:
     def __init__(self, parentBody, mass):
         self.mu = parentBody.mu
+        self.parentRadius = parentBody.r
         self.m = mass
 
     def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
@@ -68,6 +69,7 @@ class Body:
 
         self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
     
         # self.tp = timeSincePeriapse
     def initPositionOrbit(self, r, v):
@@ -79,6 +81,7 @@ class Body:
         """
         self.r = r
         self.v = v
+        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
 
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
