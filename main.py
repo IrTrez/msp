@@ -8,11 +8,13 @@ print("Fix the gdot")
 
 
 class Atmosphere:
-    def __init__(self, densityFunction = None, densityFile = None):
+    def __init__(self, limitAltitude, densityFunction = None, densityFile = None):
         assert (densityFunction is None and densityFile is None), "Only one input method of atmosphere can be given"
         assert (densityFunction is not None and densityFile is not None), "Multiple methods of atmosphere are given"
         if densityFunction is not None:
-            #create dictionary with density per meter altitude. density in kg/m^3 altitude in km
+            # return the function
+            # or
+            # create dictionary with density per meter altitude. density in kg/m^3 altitude in km
             pass
         if densityFile is not None:
             # take dictionary from density file
@@ -31,7 +33,7 @@ class Planet:
 
         # Add atmospheric density model here
         if atmosphere != False:
-            pass
+            self.atmosphere = atmosphere
 
 
 class Body:
