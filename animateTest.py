@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import time
 from tqdm import tqdm
 import math
+from matplotlib.animation import FuncAnimation
+import mpl_toolkits.mplot3d.axes3d as p3
 plt.style.use('seaborn-pastel')
 
 # USE km AS STANDARD DISTANCE UNIT
@@ -14,7 +16,6 @@ muSun = 1.327178e11
 currentTime = time.time()
 Mars = m.Planet(42800, 3402, 1.524 * AU, muSun)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun)
-
 
 p = 15067.790
 e = 0.53285
@@ -26,11 +27,12 @@ a = p / (1 - e**2)
 
 initTest = m.Body(Earth, 100)
 initTest.initKeplerOrbit(a,e,i,Omega,omega,trueAnomaly)
-print(initTest.orbitalPeriod)
 
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
+ax.set_aspect('equal')
+
 
 # Sphere:
 u = np.linspace(0, 2 * np.pi, 100)
@@ -43,26 +45,31 @@ ax.plot_wireframe(x, y, z, color='b')
 
 timestep = 200
 rlist = []
-for deltat in tqdm(range(int(initTest.orbitalPeriod / timestep) + 1)):
+for deltat in tqdm(range(int((initTest.orbitalPeriod * 1.1)/ timestep) + 1)):
     initTest.refreshByTimestep(timestep)
     rlist.append(initTest.r)
-rlist = np.array(rlist).T
+rlist = np.array(rlist)
 
-ax.set_ylim(-30000, 30000)
-ax.set_xlim(-30000, 30000)
-ax.set_zlim(-30000, 30000)
+line, = ax.plot([], [], lw=3)
+ax.set_ylim(-20000, 20000)
+ax.set_xlim(-20000, 20000)
+ax.set_zlim(-20000, 20000)
 
-# print(rlist)
-plt.pause(1)
-for u in tqdm(range(len(rlist[0]))):
-    # print(deltat)
-    ax.plot(rlist[0][0:u], rlist[1][0:u], rlist[2][0:u], color="g")
-    plt.pause(0.000001)
-    plt.clf
-    
-# rlist = np.array(rlist).T
 
+# currenttime = 0
+def animate(i):
+    displaydata = np.array(rlist[0: i+1]).T
+    # print(displaydata)
+
+    line.set_data(displaydata[0], displaydata[1])
+    line.set_3d_properties(displaydata[2])
+    return line,
+
+
+anim = FuncAnimation(fig, animate, frames=int((initTest.orbitalPeriod*1.1) / timestep), interval=20, blit=True)
+
+anim.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
 # plot the orbit
+# ax.plot(rlist[0], rlist[1], rlist[2], color="g")
 
-# ax.set_aspect('equal')
-# plt.show()
+plt.show()
