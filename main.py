@@ -110,7 +110,7 @@ class Body:
             vnew += adrag * dt
         self.initPositionOrbit(rnew, vnew)
 
-    def propagate(self, time, saveFile, atmospheric = False, dtAtmospheric = 200, dtNormal = 200):
+    def propagate(self, time, saveFile = None, atmospheric = False, dtAtmospheric = 200, dtNormal = 200):
         rlist = []
         print("The propagate method is currently WIP, finding a way to finely integrate when in atmosphere")
         # Find a way to integrate finely while also making the speed correct.
@@ -122,7 +122,9 @@ class Body:
             else:
                 self.refreshByTimestep(dtNormal, atmospheric)
                 rlist.append(self.r)
+        if saveFile is not None:
             np.savetxt(saveFile, rlist, delimiter=",")
+        return rlist
 
     def refreshKeplerOrbit(self, t):
         # might be deprecated
