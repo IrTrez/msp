@@ -20,7 +20,7 @@ Earth = m.Planet(398600.441, 6378.136, AU, muSun, "placeholder Atmosphere")
 
 p = 10067.790
 e = 0.58285
-i = math.radians(35)
+i = math.radians(45)
 Omega = math.radians(30.89)
 omega = math.radians(53.38)
 trueAnomaly = math.radians(40)
@@ -42,7 +42,7 @@ x = Earth.r * np.outer(np.cos(u), np.sin(v))
 y = Earth.r * np.outer(np.sin(u), np.sin(v))
 z = Earth.r * np.outer(np.ones(np.size(u)), np.cos(v))
 # Plot the surface
-ax.plot_wireframe(x, y, z, color='b')
+ax.plot_surface(x, y, z, color='tab:cyan')
 
 timestep = 200
 rlist = []
@@ -50,7 +50,7 @@ hlist = []
 parentradiuslist = []
 
 # PROPAGATE Here
-spacecraft.propagate(1.5*spacecraft.orbitalPeriod, DATAFILE, True)
+spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True)
 
 ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)
