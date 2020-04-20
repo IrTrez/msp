@@ -34,6 +34,7 @@ class Planet:
         # Add atmospheric density model here
         if atmosphere != False:
             self.atmosphere = atmosphere
+            self.atmosphericLimitAltitude = 500
 
 
 class Body:
@@ -43,9 +44,13 @@ class Body:
         self.m = mass
         self.CD = DragCoeff
         self.surfaceArea = surfaceArea
+        if parentBody.atmosphere != False:
+            self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
+
 
     def getDensity(self, altitude):
         return 0.00005 #replace by interaction with atmosphere class later
+
 
     def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
         """Set up an orbit using keplerian elements
@@ -77,7 +82,8 @@ class Body:
         self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
-    
+
+
         # self.tp = timeSincePeriapse
     def initPositionOrbit(self, r, v):
         """Set up an orbit using carthesian position and velocity vectors
@@ -93,17 +99,30 @@ class Body:
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
 
-    def refreshByTimestep(self, dt):
+
+    def refreshByTimestep(self, dt, atmospheric):
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
-        if altitudenorm < 500:
+        if (altitudenorm < 500 and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
             adrag = -0.5 * self.getDensity(self.altitude) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
         self.initPositionOrbit(rnew, vnew)
 
-
+    def propagate(self, time, saveFile, atmospheric = False, dtAtmospheric = 200, dtNormal = 200):
+        rlist = []
+        print("The propagate method is currently WIP, finding a way to finely integrate when in atmosphere")
+        # Find a way to integrate finely while also making the speed correct.
+        for deltat in tqdm(range((int(time / dtAtmospheric)) + 1)):
+            #plus 500 is a safety margin as it's takeing the previous altitude
+            if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 500: 
+                self.refreshByTimestep(dtAtmospheric , atmospheric)
+                rlist.append(self.r)
+            else:
+                self.refreshByTimestep(dtNormal, atmospheric)
+                rlist.append(self.r)
+            np.savetxt(saveFile, rlist, delimiter=",")
 
     def refreshKeplerOrbit(self, t):
         # might be deprecated
@@ -127,6 +146,7 @@ class Body:
             self.fpa = math.sqrt(((self.e)**2 - 1) /
                                  ((self.e)**2 * (cosh(H))**2) - 1)
 
+
     def findEccentricAnomaly(self):
         """Find eccentric anomaly taking the body's current keplerian values
         
@@ -146,6 +166,7 @@ class Body:
             if abs(lastE - E) < tolerance:
                 break
         return E
+
 
     def findHyperbolicAnomaly(self):
         """Find hyperbolic anomaly taking the body's current keplerian values
@@ -176,6 +197,7 @@ class Body:
                 break
         return H
 
+
     # Vallado Algorithm 1 page 63
     def c2_c3(self, psi):
         """Obtain c2 and c3 values used for the universal solution method of kepler's problem
@@ -196,6 +218,7 @@ class Body:
             c2 = 0.5
             c3 = 1./6.
         return c2, c3
+
 
     # Vallado algorithm 8 page 93 change of positions with time
     def keplerTime(self, r, v, dt):
@@ -254,6 +277,7 @@ class Body:
         succes = (f*gdot) - (fdot*g)
 
         return rnew, vnew
+
 
     # Vallado algorithm 9
     def RVtoCOE(self, r, v):
@@ -325,6 +349,7 @@ class Body:
                 lambda_true = 2*math.pi-lambda_true
 
         return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
+
 
     # Vallado algorithm 10
     def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None, p = None):
