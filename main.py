@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm as tqdm
 import math
-from math import acos, cos, cosh, asin, sin,sinh
+from math import acos, cos, cosh, asin, sin,sinh, exp
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 # import pandas as pd #uncomment when exporting has been implemented.
 print("Fix the gdot")
@@ -9,8 +9,8 @@ print("Fix the gdot")
 
 class Atmosphere:
     def __init__(self, limitAltitude, densityFunction = None, densityFile = None):
-        assert (densityFunction is None and densityFile is None), "Only one input method of atmosphere can be given"
-        assert (densityFunction is not None and densityFile is not None), "Multiple methods of atmosphere are given"
+        # assert (densityFunction is None and densityFile is None), "Only one input method of atmosphere can be given"
+        # assert (densityFunction is not None and densityFile is not None), "Multiple methods of atmosphere are given"
         if densityFunction is not None:
             # return the function
             # or
@@ -46,6 +46,7 @@ class Body:
         self.surfaceArea = surfaceArea
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
+            self.density=parentBody.atmosphere.densityFunction
 
 
     def getDensity(self, altitude):
@@ -60,6 +61,7 @@ class Body:
             Omega = math.radians(Omega)
             omega = math.radians(omega)
             trueAnomaly = math.radians(trueAnomaly)
+        """
 
         self.a = semiMajorAxis
         self.e = eccentricity
@@ -95,7 +97,7 @@ class Body:
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
         if (altitudenorm < 500 and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
-            adrag = -0.5 * self.getDensity(self.altitude) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
+            adrag = -0.5 * self.density(self.altitude) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
         self.initPositionOrbit(rnew, vnew)
 

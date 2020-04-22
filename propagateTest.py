@@ -6,6 +6,7 @@ import pandas as pd
 import time
 from tqdm import tqdm
 import math
+from math import exp
 plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/propagateTest.csv"
@@ -15,7 +16,15 @@ DATAFILE = "runs/propagateTest.csv"
 AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
-Earth = m.Planet(398600.441, 6378.136, AU, muSun, "placeholder Atmosphere")
+limitAltitude=500
+def density(h):
+    h=h*1000
+    tk = -23.4+237.15 - 0.00222 * h
+    pkilo=0.699*np.exp(-0.00009*h)
+    d = pkilo / (0.1921 * tk)
+    return d
+Mars_atmosphere=m.Atmosphere(limitAltitude, density)
+Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
 
 p = 10067.790
