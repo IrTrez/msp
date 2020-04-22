@@ -53,13 +53,9 @@ z = Earth.r * np.outer(np.ones(np.size(u)), np.cos(v))
 # Plot the surface
 ax.plot_surface(x, y, z, color='tab:cyan')
 
-timestep = 200
-rlist = []
-hlist = []
-parentradiuslist = []
 
 # PROPAGATE Here
-rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True)
+rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True, dtAtmospheric=1, dtNormal=1)
 
 ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)
