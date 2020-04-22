@@ -15,7 +15,7 @@ class Atmosphere:
             # return the function
             # or
             # create dictionary with density per meter altitude. density in kg/m^3 altitude in km
-            pass
+            self.densityFunction=densityFunction
         if densityFile is not None:
             # take dictionary from density file
             pass
@@ -48,18 +48,7 @@ class Body:
         return 0.00005 #replace by interaction with atmosphere class later
 
     def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
-        """Set up an orbit using keplerian elements
         
-        Arguments:
-            semiMajorAxis {float} -- Semi-Major axis [km]
-            eccentricity {float} -- eccentricity
-            inclination {float} -- inclination [rad]
-            Omega {float} -- Big omega [rad]
-            omega {float} -- argument of periapse [rad]
-        
-        Keyword Arguments:
-            trueAnomaly {float} -- True Anomaly [rad] (default: {0})
-            useDegrees {boolean} -- Option to init angles with degrees  (default: {False})
         """
         if useDegrees:
             i = math.radians(i)
