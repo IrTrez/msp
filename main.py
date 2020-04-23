@@ -1,6 +1,8 @@
 import numpy as np
 from tqdm import tqdm as tqdm
 import math
+from math import acos, cos, cosh, asin, sin,sinh
+import time
 from math import acos, cos, cosh, asin, sin,sinh, exp
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 # import pandas as pd #uncomment when exporting has been implemented.
@@ -73,7 +75,11 @@ class Body:
         self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
-
+        self.apoapsis = self.a * (1 + self.e)
+        self.periapsis = self.a + (1 - self.e)
+        self.manoeuvers = {}
+        self.time = time.time()
+        self.counter = 0        #only used to force add a manoeuver
 
         # self.tp = timeSincePeriapse
     def initPositionOrbit(self, r, v):
@@ -88,10 +94,12 @@ class Body:
         # self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
 
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
+
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
 
 
     def refreshByTimestep(self, dt, atmospheric):
+        self.time += dt
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
@@ -99,7 +107,16 @@ class Body:
             vnorm = np.sqrt(vnew.dot(vnew))
             adrag = -0.5 * self.density(self.altitude) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
-        self.initPositionOrbit(rnew, vnew)
+        '''
+        # this is only a way of telling the program to create a manoeuver
+        
+        if self.PeriapsisCheck():
+            if self.counter==0:
+                self.AddManoeuvers(self.orbitalPeriod/2,self.ParkingOrbit())
+            self.counter += 1
+        '''
+        self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
+
 
     def propagate(self, time, saveFile = None, atmospheric = False, dtAtmospheric = 200, dtNormal = 200):
         rlist = []
@@ -116,6 +133,7 @@ class Body:
         if saveFile is not None:
             np.savetxt(saveFile, rlist, delimiter=",")
         return rlist
+
 
     def refreshKeplerOrbit(self, t):
         # might be deprecated
@@ -403,3 +421,78 @@ class Body:
         rijk = np.matmul(PQWtoIJKtransform, rpqw)
         vijk = np.matmul(PQWtoIJKtransform, vpqw)
         return rijk, vijk
+
+
+    def ApoapsisCheck(self):
+        """
+        Returns:
+            True/False statment depending on position of space-craft
+        """
+
+        self.checkA = False
+
+        if math.isclose(np.sqrt(self.r.dot(self.r)), self.apoapsis, rel_tol=1e-4):
+            self.checkA = True
+
+        return self.checkA
+
+
+    def PeriapsisCheck(self):
+        """
+        Returns:
+            True/False statment depending on position of space-craft
+        """
+
+        self.checkP = False
+
+        if math.isclose(np.sqrt(self.r.dot(self.r)), self.apoapsis, rel_tol=1e-4):
+            self.checkP = True
+
+        return self.checkP
+
+
+    def ParkingOrbit(self):
+        '''
+
+            ap {float} -- semi major axis for parking orbit [km]
+
+        Returns:
+            POdv {ndarray} -- Carthesian velocity vector for transfer at apoapsis to parking orbit
+        '''
+
+        self.ap = 0.5 * (self.apoapsis+self.periapsis+self.atmosphericLimitAltitude)
+
+        self.POdv = abs(math.sqrt(self.mu*(2/self.apoapsis-1/self.a))-math.sqrt(self.mu*(2/self.apoapsis-1/self.ap)))
+        self.POdv = (self.v/np.sqrt(self.v.dot(self.v)))*self.POdv
+
+        return self.POdv
+
+
+    def Manoeuvers(self,v):
+        '''
+
+        parameter:
+            v (ndarray) -- vnew, the most recent calculations for current velocity in cartesian coordinates
+
+        '''
+
+        ManoeuverRemoval = []
+        for i in self.manoeuvers:
+            if math.isclose(i, self.time, rel_tol=10E-1):
+                v = v + self.manoeuvers[i]
+                ManoeuverRemoval.append(i)
+
+        for i in ManoeuverRemoval:
+            self.manoeuvers.pop(i)
+        return v
+
+
+    def AddManoeuvers(self, time, dv):
+        '''
+
+            time (float) -- time of manoeuvers
+            dv (ndarray) -- delta v for maneuvers in cartesian coordinates
+
+        '''
+        
+        self.manoeuvers[time]=dv
