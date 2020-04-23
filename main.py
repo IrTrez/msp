@@ -1,12 +1,9 @@
 import numpy as np
 from tqdm import tqdm as tqdm
 import math
-<<<<<<< HEAD
 from math import acos, cos, cosh, asin, sin,sinh
 import time
-=======
 from math import acos, cos, cosh, asin, sin,sinh, exp
->>>>>>> a1da363a4f75eea3462be8794173819c48d5b805
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 # import pandas as pd #uncomment when exporting has been implemented.
 print("Fix the gdot")
