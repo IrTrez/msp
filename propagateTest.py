@@ -16,7 +16,8 @@ DATAFILE = "runs/propagateTest.csv"
 AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
-limitAltitude=500
+limitAltitude=500  #[km]
+
 def density(h):
     h=h*1000
     if h <= 7000:
@@ -31,10 +32,9 @@ def density(h):
         pkilo=0.699*exp(-0.00009*h)
         d = pkilo / (0.1921 * tk)
     return d
-    
+
 Mars_atmosphere=m.Atmosphere(limitAltitude, density)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
-
 
 p = 10067.790
 e = 0.58285
@@ -64,7 +64,7 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 
 # PROPAGATE Here
-rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True, dtAtmospheric=1, dtNormal=1)
+rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True, dtAtmospheric=50, dtNormal=50)
 
 ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)

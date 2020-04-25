@@ -105,8 +105,10 @@ class Body:
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
         if (altitudenorm < 500 and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
-            adrag = -0.5 * self.density(self.altitude) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
+
+            adrag = -0.5 * self.density(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
+        
         '''
         # this is only a way of telling the program to create a manoeuver
         
