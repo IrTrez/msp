@@ -16,13 +16,13 @@ DATAFILE = "runs/propagateTest.csv"
 AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
-limitAltitude=250  #[km]
+limitAltitude=260  #[km]. At this altitude density is just below 1*10^-10
 
 def density(h): #h given in km
-    hm=round(int(h*1000))
-    df=pd.read_csv("MarsDensity.csv")
+    hm=int(10*round((h*100)))
+    df=pd.read_csv("MarsDensity.csv") #CSV has data for every 10 meters
     df.set_index("Altitude", inplace=True)
-    rho=df.loc[h, 'Density']
+    rho=df.loc[hm, 'Density']
     return rho
 
 Mars_atmosphere=m.Atmosphere(limitAltitude, density)
