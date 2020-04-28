@@ -16,7 +16,7 @@ DATAFILE = "runs/propagateTest.csv"
 AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
-limitAltitude=500  #[km]
+limitAltitude=250  #[km]
 
 def density(h):
     h=h*1000
