@@ -25,7 +25,7 @@ class Atmosphere:
             density.iloc[:, 0] = density.iloc[:, 0].apply(round,args=[3])
             density.set_index("Altitude", inplace=True)
             self.densityDict = density.to_dict()["Density"]
-            
+
 
 
 class Planet:
@@ -81,8 +81,9 @@ class Body:
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
-        self.periapsis = self.a + (1 - self.e)
+        self.periapsis = self.a * (1 - self.e)
         self.manoeuvers = {}
+        self.time = time.time()
         self.counter = 0        #only used to force add a manoeuver
         self.clock = time.time()
         self.start = self.clock
