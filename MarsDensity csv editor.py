@@ -1,19 +1,11 @@
-"""
-Created on Mon Mar 23 16:25:47 2020
-
-@author: AndreaBattegazzore
-"""
-from math import *
+from math import exp
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
 import csv
-
 
 alt=np.arange(0,500000,1) # In km with step of 1 m so every 0.001 km
 altkm=alt/1000
 den=[]
-
 
 tlist=[]
 
