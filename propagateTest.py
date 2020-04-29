@@ -10,7 +10,7 @@ from math import exp
 plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/propagateTest.csv"
-ATMOSPHEREDATA = "MarsDensity.csv"
+ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
 SPEED = 200  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
@@ -24,7 +24,7 @@ limitAltitude = 500 # 260  #[km]. At this altitude density is just below 1*10^-1
 Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
-p = 10067.790
+p = 10167.790
 e = 0.58285
 i = math.radians(45)
 Omega = math.radians(30.89)
@@ -38,7 +38,7 @@ surfaceArea = 3.6**2 * math.pi
 spacecraft = m.Body(Earth, 100, CD, surfaceArea )
 spacecraft.initKeplerOrbit(a,e,i,Omega,omega,trueAnomaly)
 
-print(spacecraft.apoapsis)
+print(spacecraft.periapsis)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')

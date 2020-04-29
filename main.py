@@ -81,7 +81,7 @@ class Body:
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
-        self.periapsis = self.a + (1 - self.e)
+        self.periapsis = self.a * (1 - self.e)
         self.manoeuvers = {}
         self.counter = 0        #only used to force add a manoeuver
         self.clock = time.time()
@@ -134,7 +134,8 @@ class Body:
             if self.parentRadius > np.sqrt(self.r.dot(self.r)):
                 print("Body crashed into surface")
                 print("Ending propagation")
-                print("Simulation ran for: " + str(time.time() - self.start))
+                # print("Simulation ran for: " + str(time.time() - self.start))
+                print(self.r)
                 break
             #plus 500 is a safety margin as it's takeing the previous altitude
             if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 500: 
