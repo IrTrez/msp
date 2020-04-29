@@ -104,9 +104,9 @@ class Body:
 
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
 
-        self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+        #self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
 
-        self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+        #self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)

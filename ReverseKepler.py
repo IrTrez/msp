@@ -10,7 +10,7 @@ from math import exp
 plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/propagateTest.csv"
-ATMOSPHEREDATA = "MarsDensity.csv"
+ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
 SPEED = 200  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
@@ -32,13 +32,15 @@ omega = math.radians(53.38)
 trueAnomaly = math.radians(40)
 a = p / (1 - e**2)
 
+r=np.array([0,0,398600.441+500])
+v=np.array([0,5,0])
+
 CD = 1.2
 surfaceArea = 3.6**2 * math.pi
 
 spacecraft = m.Body(Earth, 100, CD, surfaceArea )
-spacecraft.initPositionOrbit()
+spacecraft.initPositionOrbit(r,v)
 
-print(spacecraft.apoapsis)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -54,7 +56,7 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 
 # PROPAGATE Here
-rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True, dtAtmospheric = -1, dtNormal = -1)
+rlist = spacecraft.propagate(2*24000, DATAFILE, False, dtAtmospheric = -1, dtNormal = -1)
 
 ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)
