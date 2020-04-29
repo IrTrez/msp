@@ -12,6 +12,7 @@ plt.style.use('dark_background')
 
 # INPUT
 DATAFILE = "runs/propagateTest.csv"
+SPEED = 200 # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -39,7 +40,19 @@ ax.set_zlim(-15000, 15000)
 # ax.grid(False)
 plt.axis("off")
 
-data = pd.read_csv(DATAFILE, names=["x", "y", "z"]).to_numpy()
+data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
+print(len(data))
+
+droppedPoints = []
+for u in range(len(data)):
+    if u % SPEED != 0:
+        droppedPoints.append(u)
+
+data = data.drop(droppedPoints, axis=0).to_numpy()
+print(len(data))
+savename = DATAFILE[5:-4]
+plt.suptitle(savename + " " + str(SPEED) + "x speed")
+
 steps = len(data)
 def animate(i):
     displaydata = np.array(data[0: i+1]).T
@@ -50,7 +63,6 @@ def animate(i):
 
 anim = FuncAnimation(fig, animate, frames= steps, interval=10, blit=True)
 
-savename = DATAFILE[5:-4]
 fullSaveName = "animations/" + savename + ".mp4"
 print("Saving to " + fullSaveName)
 anim.save(fullSaveName, fps=30, extra_args=['-vcodec', 'libx264'])

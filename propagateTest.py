@@ -56,7 +56,7 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 
 # PROPAGATE Here
-rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True, dtAtmospheric=50, dtNormal=50)
+rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True)
 
 ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)
