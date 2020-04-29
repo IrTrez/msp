@@ -131,7 +131,7 @@ class Body:
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         rlist = []
-        for deltat in tqdm(range((int(timeJump / dtAtmospheric)) + 1)):
+        for deltat in tqdm(range((int(timeJump / abs(dtAtmospheric))) + 1)):
             if self.parentRadius > np.sqrt(self.r.dot(self.r)):
                 print("Body crashed into surface")
                 print("Ending propagation")

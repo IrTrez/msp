@@ -10,29 +10,25 @@ from math import exp
 plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/propagateTest.csv"
+ATMOSPHEREDATA = "MarsDensity.csv"
+SPEED = 200  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
 AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
-limitAltitude=260  #[km]. At this altitude density is just below 1*10^-10
+limitAltitude = 500 # 260  #[km]. At this altitude density is just below 1*10^-10
 
-def density(h): #h given in km
-    hm=int(10*round((h*100)))
-    df=pd.read_csv("MarsDensity.csv") #CSV has data for every 10 meters
-    df.set_index("Altitude", inplace=True)
-    rho=df.loc[hm, 'Density']
-    return rho
 
-Mars_atmosphere=m.Atmosphere(limitAltitude, density)
+Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
-p = 10067.790
+p = 18067.790
 e = 0.58285
-i = math.radians(50)
-Omega = math.radians(34)
-omega = math.radians(55)
+i = math.radians(45)
+Omega = math.radians(30.89)
+omega = math.radians(53.38)
 trueAnomaly = math.radians(40)
 a = p / (1 - e**2)
 
@@ -40,7 +36,9 @@ CD = 1.2
 surfaceArea = 3.6**2 * math.pi
 
 spacecraft = m.Body(Earth, 100, CD, surfaceArea )
-spacecraft.initKeplerOrbit(a,e,i,Omega,omega,trueAnomaly)
+spacecraft.initPositionOrbit()
+
+print(spacecraft.apoapsis)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -56,13 +54,19 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 
 # PROPAGATE Here
-rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True, dtAtmospheric=-500, dtNormal=-500)
+rlist = spacecraft.propagate(2*spacecraft.orbitalPeriod, DATAFILE, True, dtAtmospheric = -1, dtNormal = -1)
 
 ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)
 ax.set_zlim(-30000, 30000)
 
 data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
+droppedPoints = []
+for u in range(len(data)):
+    if u % SPEED != 0:
+        droppedPoints.append(u)
+
+data = data.drop(droppedPoints, axis=0)
 x = data.loc[:,"x"].to_numpy()
 y = data.loc[:,"y"].to_numpy()
 z = data.loc[:,"z"].to_numpy()
