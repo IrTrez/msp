@@ -52,6 +52,8 @@ class Body:
         self.m = mass
         self.CD = DragCoeff
         self.surfaceArea = surfaceArea
+        self.clock = time.time()
+        self.start = self.clock
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
             self.densityDict = parentBody.densityDict
@@ -85,8 +87,7 @@ class Body:
         self.manoeuvers = {}
         self.time = time.time()
         self.counter = 0        #only used to force add a manoeuver
-        self.clock = time.time()
-        self.start = self.clock
+        
 
         self.dt = 1 # default global timestep
 
@@ -110,8 +111,7 @@ class Body:
         self.periapsis = self.a * (1 - self.e)
         self.manoeuvers = {}
         self.counter = 0        #only used to force add a manoeuver
-        self.clock = time.time()
-        self.start = self.clock
+        
 
         self.dt = 1 # default global timestep
 
