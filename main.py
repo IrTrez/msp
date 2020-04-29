@@ -79,7 +79,8 @@ class Body:
         self.periapsis = self.a + (1 - self.e)
         self.manoeuvers = {}
         self.counter = 0        #only used to force add a manoeuver
-        self.time = time.time()
+        self.clock = time.time()
+        self.start = self.clock
 
         self.dt = 1 # default global timestep
 
@@ -101,7 +102,7 @@ class Body:
 
 
     def refreshByTimestep(self, dt, atmospheric):
-        self.time += dt
+        self.clock += dt
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
@@ -122,11 +123,14 @@ class Body:
         self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
 
 
-    def propagate(self, time, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
+    def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         rlist = []
-        print("The propagate method is currently WIP, finding a way to finely integrate when in atmosphere")
-        # Find a way to integrate finely while also making the speed correct.
-        for deltat in tqdm(range((int(time / dtAtmospheric)) + 1)):
+        for deltat in tqdm(range((int(timeJump / dtAtmospheric)) + 1)):
+            if self.parentRadius > np.sqrt(self.r.dot(self.r)):
+                print("Body crashed into surface")
+                print("Ending propagation")
+                print("Simulation ran for: " + str(time.time() - self.start))
+                break
             #plus 500 is a safety margin as it's takeing the previous altitude
             if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 500: 
                 self.refreshByTimestep(dtAtmospheric , atmospheric)
@@ -482,7 +486,7 @@ class Body:
 
         ManoeuverRemoval = []
         for i in self.manoeuvers:
-            if math.isclose(i, self.time, rel_tol=10E-1):
+            if math.isclose(i, self.clock, rel_tol=10E-1):
                 v = v + self.manoeuvers[i]
                 ManoeuverRemoval.append(i)
 
@@ -491,12 +495,12 @@ class Body:
         return v
 
 
-    def AddManoeuvers(self, time, dv):
+    def AddManoeuvers(self, clock, dv):
         '''
 
-            time (float) -- time of manoeuvers
+            clock (float) -- clock of manoeuvers
             dv (ndarray) -- delta v for maneuvers in cartesian coordinates
 
         '''
         
-        self.manoeuvers[time]=dv
+        self.manoeuvers[clock]=dv

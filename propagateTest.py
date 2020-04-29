@@ -10,6 +10,7 @@ from math import exp
 plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/propagateTest.csv"
+SPEED = 200  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -42,6 +43,8 @@ surfaceArea = 3.6**2 * math.pi
 spacecraft = m.Body(Earth, 100, CD, surfaceArea )
 spacecraft.initKeplerOrbit(a,e,i,Omega,omega,trueAnomaly)
 
+print(spacecraft.apoapsis)
+
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
@@ -63,6 +66,12 @@ ax.set_xlim(-30000, 30000)
 ax.set_zlim(-30000, 30000)
 
 data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
+droppedPoints = []
+for u in range(len(data)):
+    if u % SPEED != 0:
+        droppedPoints.append(u)
+
+data = data.drop(droppedPoints, axis=0)
 x = data.loc[:,"x"].to_numpy()
 y = data.loc[:,"y"].to_numpy()
 z = data.loc[:,"z"].to_numpy()
