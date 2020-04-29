@@ -53,7 +53,7 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 # Add manoeuvers before propagate
 
-spacecraft.AddManoeuvers(spacecraft.clock+spacecraft.orbitalPeriod,np.array([0,0,2]))
+spacecraft.AddManoeuvers(spacecraft.clock+2*spacecraft.orbitalPeriod,np.array([0,0,2]))
 
 # PROPAGATE Here
 rlist = spacecraft.propagate(4*spacecraft.orbitalPeriod, DATAFILE, False)

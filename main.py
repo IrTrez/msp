@@ -502,7 +502,7 @@ class Body:
 
         ManoeuverRemoval = []
         for i in self.manoeuvers:
-            if math.isclose(i, self.clock, rel_tol=10E-5):
+            if math.isclose(i, self.clock, rel_tol=10E-6):
                 v = v + self.manoeuvers[i]
                 ManoeuverRemoval.append(i)
 
