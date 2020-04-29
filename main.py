@@ -5,26 +5,31 @@ from math import acos, cos, cosh, asin, sin,sinh
 import time
 from math import acos, cos, cosh, asin, sin,sinh, exp
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
-# import pandas as pd #uncomment when exporting has been implemented.
+import pandas as pd
 print("Fix the gdot")
 
 
 class Atmosphere:
     def __init__(self, limitAltitude, densityFunction = None, densityFile = None):
-        # assert (densityFunction is None and densityFile is None), "Only one input method of atmosphere can be given"
-        # assert (densityFunction is not None and densityFile is not None), "Multiple methods of atmosphere are given"
+        self.limitAltitude = limitAltitude
+        assert not (densityFunction is not None and densityFile is not None), "Only one input method of atmosphere can be given"
+        assert not (densityFunction is None and densityFile is None), "Multiple methods of atmosphere are given"
         if densityFunction is not None:
             # return the function
             # or
             # create dictionary with density per meter altitude. density in kg/m^3 altitude in km
+            print("DensityFunction is temporarily deprecated, use densityFile instead")
             self.densityFunction=densityFunction
         if densityFile is not None:
             # take dictionary from density file
-            pass
+            density = pd.read_csv(densityFile)
+            density.set_index("Altitude", inplace=True)
+            self.densityDict = density.to_dict()
+            
 
 
 class Planet:
-    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere="false"):
+    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere:Atmosphere="false"):
         self.mu = gravitationalParameter
         self.muParent = parentGravitationalParameter
         self.r = radius
@@ -36,7 +41,8 @@ class Planet:
         # Add atmospheric density model here
         if atmosphere != False:
             self.atmosphere = atmosphere
-            self.atmosphericLimitAltitude = 500
+            self.atmosphericLimitAltitude = atmosphere.limitAltitude
+            self.densityDict = atmosphere.densityDict
 
 
 class Body:
@@ -48,11 +54,10 @@ class Body:
         self.surfaceArea = surfaceArea
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
-            self.density=parentBody.atmosphere.densityFunction
-
+            self.densityDict = parentBody.densityDict
 
     def getDensity(self, altitude):
-        return 0.00005 #replace by interaction with atmosphere class later
+        return self.densityDict[round(altitude,3)]
 
 
     def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
@@ -109,7 +114,7 @@ class Body:
         if (altitudenorm < 500 and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
 
-            adrag = -0.5 * self.density(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
+            adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
         
         '''

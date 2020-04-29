@@ -10,6 +10,7 @@ from math import exp
 plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/propagateTest.csv"
+ATMOSPHEREDATA = "MarsDensity.csv"
 SPEED = 200  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
@@ -19,14 +20,8 @@ muSun = 1.327178e11
 currentTime = time.time()
 limitAltitude=260  #[km]. At this altitude density is just below 1*10^-10
 
-def density(h): #h given in km
-    hm=int(10*round((h*100)))
-    df=pd.read_csv("MarsDensity.csv") #CSV has data for every 10 meters
-    df.set_index("Altitude", inplace=True)
-    rho=df.loc[hm, 'Density']
-    return rho
 
-Mars_atmosphere=m.Atmosphere(limitAltitude, density)
+Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
 p = 10067.790
