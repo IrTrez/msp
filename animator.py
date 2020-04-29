@@ -18,7 +18,7 @@ SPEED = 200 # __ times speed
 # USE s AS STANDARD TIME UNIT
 AU = 149.6e6  # km
 muSun = 1.327178e11
-Earth = m.Planet(398600.441, 6378.136, AU, muSun)
+Earth = m.Planet(398600.441, 6378.136, AU, muSun, False)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
