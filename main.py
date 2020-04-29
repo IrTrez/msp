@@ -106,6 +106,17 @@ class Body:
 
         self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
 
+        self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
+        self.apoapsis = self.a * (1 + self.e)
+        self.periapsis = self.a * (1 - self.e)
+        self.manoeuvers = {}
+        self.counter = 0        #only used to force add a manoeuver
+        self.clock = time.time()
+        self.start = self.clock
+
+        self.dt = 1 # default global timestep
+
 
     def refreshByTimestep(self, dt, atmospheric):
         self.clock += dt
