@@ -25,7 +25,7 @@ def density(h): #h given in km
     rho=df.loc[hm, 'Density']
     return rho
 
-Mars_atmosphere=m.Atmosphere(limitAltitude, density)
+Mars_atmosphere=m.Atmosphere(limitAltitude, densityFunction=None, densityFile="MarsDensity.csv")
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
 p = 10067.790

@@ -20,7 +20,7 @@ class Atmosphere:
             self.densityFunction=densityFunction
         if densityFile is not None:
             # take dictionary from density file
-            pass
+            self.densityFile=densityFile
 
 
 class Planet:
