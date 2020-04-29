@@ -18,7 +18,7 @@ SPEED = 200  # __ times speed
 AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
-limitAltitude=260  #[km]. At this altitude density is just below 1*10^-10
+limitAltitude = 500 # 260  #[km]. At this altitude density is just below 1*10^-10
 
 
 Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)

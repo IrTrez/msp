@@ -19,12 +19,12 @@ class Atmosphere:
             # or
             # create dictionary with density per meter altitude. density in kg/m^3 altitude in km
             print("DensityFunction is temporarily deprecated, use densityFile instead")
-            self.densityFunction=densityFunction
+            self.densityFunction = densityFunction
         if densityFile is not None:
-            # take dictionary from density file
             density = pd.read_csv(densityFile)
+            density.iloc[:, 0] = density.iloc[:, 0].apply(round,args=[3])
             density.set_index("Altitude", inplace=True)
-            self.densityDict = density.to_dict()
+            self.densityDict = density.to_dict()["Density"]
             
 
 
@@ -111,7 +111,7 @@ class Body:
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
-        if (altitudenorm < 500 and atmospheric):
+        if (altitudenorm < self.atmosphericLimitAltitude and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
 
             adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
