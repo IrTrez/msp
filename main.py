@@ -78,8 +78,10 @@ class Body:
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a + (1 - self.e)
         self.manoeuvers = {}
-        self.time = time.time()
         self.counter = 0        #only used to force add a manoeuver
+        self.time = time.time()
+        
+        self.dt = 1 # default global timestep
 
         # self.tp = timeSincePeriapse
     def initPositionOrbit(self, r, v):
@@ -120,7 +122,7 @@ class Body:
         self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
 
 
-    def propagate(self, time, saveFile = None, atmospheric = False, dtAtmospheric = 200, dtNormal = 200):
+    def propagate(self, time, saveFile = None, atmospheric = False, dtAtmospheric = self.dt, dtNormal = self.dt):
         rlist = []
         print("The propagate method is currently WIP, finding a way to finely integrate when in atmosphere")
         # Find a way to integrate finely while also making the speed correct.
