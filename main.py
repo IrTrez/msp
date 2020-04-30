@@ -111,7 +111,6 @@ class Body:
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
-        self.manoeuvers = {}
         self.counter = 0        #only used to force add a manoeuver
         
 
@@ -508,13 +507,11 @@ class Body:
             v (ndarray) -- vnew, the most recent calculations for current velocity in cartesian coordinates
 
         '''
-
         ManoeuverRemoval = []
         for i in self.manoeuvers:
-            if math.isclose(i, self.clock, rel_tol=10E-6):
+            if abs(i-self.clock)<=100:
                 v = v + self.manoeuvers[i]
                 ManoeuverRemoval.append(i)
-
         for i in ManoeuverRemoval:
             self.manoeuvers.pop(i)
         return v
