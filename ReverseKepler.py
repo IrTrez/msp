@@ -9,9 +9,9 @@ import math
 from math import exp
 plt.style.use('seaborn-pastel')
 
-DATAFILE = "runs/propagateTest.csv"
+DATAFILE = "runs/reverseKepler.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 200  # __ times speed
+SPEED = 10000  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -24,16 +24,8 @@ limitAltitude = 500 # 260  #[km]. At this altitude density is just below 1*10^-1
 Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
-p = 18067.790
-e = 0.58285
-i = math.radians(45)
-Omega = math.radians(30.89)
-omega = math.radians(53.38)
-trueAnomaly = math.radians(40)
-a = p / (1 - e**2)
-
-r=np.array([0,0,398600.441+500])
-v=np.array([0,5,0])
+r = np.array([0,0, -6378.136-600])
+v = np.array([11,0,0])
 
 CD = 1.2
 surfaceArea = 3.6**2 * math.pi
@@ -56,11 +48,17 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 
 # PROPAGATE Here
-rlist = spacecraft.propagate(2*24000, DATAFILE, False, dtAtmospheric = -1, dtNormal = -1)
+# rlist = spacecraft.propagate(400000, DATAFILE, False, dtAtmospheric = -1, dtNormal = -1)
+# print(spacecraft.e)
+rrr, _ = spacecraft.keplerTime(r, v, 50000)
+print(np.sqrt(rrr.dot(rrr)))
+print(Earth.rsoi)
 
-ax.set_ylim(-30000, 30000)
-ax.set_xlim(-30000, 30000)
-ax.set_zlim(-30000, 30000)
+
+
+ax.set_ylim(-450000, 450000)
+ax.set_xlim(-450000, 450000)
+ax.set_zlim(-450000, 900000)
 
 data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
 droppedPoints = []

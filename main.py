@@ -54,6 +54,7 @@ class Body:
         self.surfaceArea = surfaceArea
         self.clock = time.time()
         self.start = self.clock
+        self.parentRSOI = parentBody.rsoi
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
             self.densityDict = parentBody.densityDict
@@ -80,7 +81,8 @@ class Body:
         self.trueAnomaly = trueAnomaly
 
         self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
-        self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+        if self.e < 1:
+            self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
@@ -101,11 +103,11 @@ class Body:
         """
         self.r = r
         self.v = v
-        # self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
+        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
 
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
-
-        #self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+        if self.e < 1:
+            self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
@@ -127,21 +129,28 @@ class Body:
             adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
         
-        '''
+        
         # this is only a way of telling the program to create a manoeuver
         
         if self.PeriapsisCheck():
             if self.counter==0:
                 self.AddManoeuvers(self.orbitalPeriod/2,self.ParkingOrbit())
             self.counter += 1
-        '''
+        
         self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
 
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         rlist = []
         for deltat in tqdm(range((int(timeJump / abs(dtAtmospheric))) + 1)):
+            if np.sqrt(self.r.dot(self.r)) + 100000 > self.parentRSOI:
+                # sphere of influence check
+                print("Body has left sphere of influence")
+                print("Radius: ", self.r)
+                print("Velocity: ", self.v)
+                break
             if self.parentRadius > np.sqrt(self.r.dot(self.r)):
+                # Check if body has crashed
                 print("Body crashed into surface")
                 print("Ending propagation")
                 # print("Simulation ran for: " + str(time.time() - self.start))

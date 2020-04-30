@@ -9,9 +9,9 @@ import math
 from math import exp
 plt.style.use('seaborn-pastel')
 
-DATAFILE = "runs/propagateTest.csv"
+DATAFILE = "runs/ManouvreTest.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 200  # __ times speed
+SPEED = 250  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT

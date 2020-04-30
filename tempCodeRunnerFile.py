@@ -1,1 +1,1 @@
-for deltat in tqdm(range(2 * int(initTest.orbitalPeriod / timestep) + 1)):
+SPEED
