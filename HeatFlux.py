@@ -22,17 +22,23 @@ n=sqrt(muMars/a**3)
 
 # Mars = m.Planet(muMars, R_m, AU, muSun) This class sets the planet into a circular orbit?
 
-def Flux(theta, l): #with clear sky
-    """Find hyperbolic anomaly taking the body's current keplerian values
+def Flux(theta, l): #with clear sky #heat flux at midday
+    """Find the heat flux from the sun at any point of the martian year and at any latitude
+    
     Arguments:
         theta  -- true anomaly [rad]
         l  -- latitude angle [rad]
+    
     Returns:
         flux -- Heat flux [W/m^2]
     """
     r=(a*(1-e_m**2))/(1+e_m*cos(theta))
     flux_str = L / (4*pi*(r*10**3)**2) #Now we need to adjust for latitude and axis inclination
-    flux=flux_str*cos(l) #not done yet...
+    true_i=i_m+l
+    if true_i >= pi/2: #it's night
+        flux=0
+    else:
+        flux=flux_str*cos(true_i)
     return flux
 
 
