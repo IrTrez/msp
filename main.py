@@ -6,7 +6,7 @@ import time
 from math import acos, cos, cosh, asin, sin,sinh, exp
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 import pandas as pd
-print("Fix the gdot")
+print("Fix the gdot in keplerTime")
 
 
 class Atmosphere:
@@ -124,6 +124,7 @@ class Body:
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
         if (altitudenorm < self.atmosphericLimitAltitude and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
+            print("atmos on")
 
             adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
@@ -131,18 +132,20 @@ class Body:
         
         # this is only a way of telling the program to create a manoeuver
         
-        if self.PeriapsisCheck():
-            if self.counter==0:
-                self.AddManoeuvers(self.orbitalPeriod/2,self.ParkingOrbit())
-            self.counter += 1
+        # if self.PeriapsisCheck():
+        #     if self.counter==0:
+        #         self.AddManoeuvers(self.orbitalPeriod/2,self.ParkingOrbit())
+        #     self.counter += 1
         
-        self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
+        # self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
+        self.initPositionOrbit(rnew, vnew)
+        print(rnew)
 
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         rlist = []
         for deltat in tqdm(range((int(timeJump / abs(dtAtmospheric))) + 1)):
-            if np.sqrt(self.r.dot(self.r)) + 100000 > self.parentRSOI:
+            if np.sqrt(self.r.dot(self.r)) + 10 > self.parentRSOI:
                 # sphere of influence check
                 print("Body has left sphere of influence")
                 print("Radius: ", self.r)
@@ -280,45 +283,45 @@ class Body:
         vnorm = np.sqrt(v.dot(v))
         rnorm = np.sqrt(r.dot(r))
 
-        def getSign(u): return (u > 0) - (u < 0)
+        def getSign(x): return (1, -1)[x < 0]
 
         eta = ((vnorm**2) / 2) - (self.mu/rnorm)
         alpha = ((-(vnorm**2)) / self.mu) + (2 / rnorm)
-        alphainv = 1/alpha  # this is actually semi major axis
 
-        if self.e < 1:
+        if alpha > 0.000001:
             assert (alpha != 1), "Alpha in Kepler Time is 1"
             chi0 = np.sqrt(self.mu) * dt * alpha
-        else:  # e>1
+        elif abs(alpha) < 0.000001:
+            print("parabola error in keplerTime")
+        elif alpha < -0.000001:  # e>1
+            alphainv = 1/alpha  # this is actually semi major axis
             chi0 = getSign(dt) * np.sqrt(-alphainv) * np.log((-2 * self.mu * alpha * dt) / (
-                np.dot(r, v) + getSign(dt) * math.sqrt(-self.mu * alphainv) * (1-(rnorm * alpha))))
+                np.dot(r, v) + (getSign(dt) * math.sqrt(-self.mu * alphainv) * (1-(rnorm * alpha)))))
 
         chi = chi0
+        counter = 0
         while True:
             chiLast = chi
             psi = chi**2 * alpha
             c2, c3 = self.c2_c3(psi)
 
-            rr = (chi**2 * c2) + ((np.dot(r, v) / np.sqrt(self.mu)) *
-                                  chi * (1 - (psi * c3))) + (rnorm * (1 - (psi * c2)))
+            rr = (chi**2 * c2) + ((np.dot(r, v) / np.sqrt(self.mu)) * chi * (1 - (psi * c3))) + (rnorm * (1 - (psi * c2)))
 
-            chi += ((np.sqrt(self.mu) * dt) - (c3 * chi**3) - ((np.dot(r, v) /
-                                                                np.sqrt(self.mu)) * c2 * chi**2) - (rnorm * chi * (1-(psi*c3)))) / rr
-
+            chi += ((np.sqrt(self.mu) * dt) - (c3 * chi**3) - ((np.dot(r, v) / np.sqrt(self.mu)) * c2 * chi**2) - (rnorm * chi * (1-(psi*c3)))) / rr
+            print(abs(chiLast-chi))
             if abs(chiLast-chi) < 10e-6:
                 break
-
+            counter +=1
+        print("chi:",chi, "iters:", counter)
         f = 1 - ((chi**2 / rnorm) * c2)
         fdot = (np.sqrt(self.mu) / (rr * rnorm)) * chi * ((psi*c3) - 1)
         g = dt - ((chi**3 / np.sqrt(self.mu)) * c3)
         gdot = 1 - ((chi**2 / rr) * c2)
 
-        # print("test", gdot)
-
         rnew = (f * r) + (g * v)
         vnew = (fdot * r) + (gdot * v)
         succes = (f*gdot) - (fdot*g)
-
+        # print(rnew)
         return rnew, vnew
 
 
@@ -346,8 +349,7 @@ class Body:
         n = np.cross(K, h)
         nnorm = np.sqrt(n.dot(n))
 
-        e = (( (vnorm**2-self.mu/rnorm) * r) - (np.dot(r, v) * v)) / \
-            (self.mu)  # is a vector
+        e = (( (vnorm**2-self.mu/rnorm) * r) - (np.dot(r, v) * v)) / (self.mu)  # is a vector
         enorm = np.sqrt(e.dot(e))
 
         eta = ((vnorm**2/2) - (self.mu/rnorm))

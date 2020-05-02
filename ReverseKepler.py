@@ -11,7 +11,7 @@ plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/reverseKepler.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 10000  # __ times speed
+SPEED = 200  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -25,7 +25,7 @@ Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
 r = np.array([0,0, -6378.136-600])
-v = np.array([11,0,0])
+v = np.array([14,0,0])
 
 CD = 1.2
 surfaceArea = 3.6**2 * math.pi
@@ -48,17 +48,19 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 
 # PROPAGATE Here
-# rlist = spacecraft.propagate(400000, DATAFILE, False, dtAtmospheric = -1, dtNormal = -1)
+# rlist = spacecraft.propagate(40000, DATAFILE, False, dtAtmospheric = 1, dtNormal = 1)
+print(np.sqrt(spacecraft.r.dot(spacecraft.r)))
 # print(spacecraft.e)
-rrr, _ = spacecraft.keplerTime(r, v, 50000)
-print(np.sqrt(rrr.dot(rrr)))
-print(Earth.rsoi)
+# rrr, _ = spacecraft.keplerTime(r, v, -50000)
+# print(spacecraft.keplerTime(r, v, -50000))
+# print(np.sqrt(rrr.dot(rrr)))
+# print(Earth.rsoi)
 
 
 
-ax.set_ylim(-450000, 450000)
-ax.set_xlim(-450000, 450000)
-ax.set_zlim(-450000, 900000)
+ax.set_ylim(-45000, 45000)
+ax.set_xlim(-45000, 45000)
+ax.set_zlim(-45000, 45000)
 
 data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
 droppedPoints = []
