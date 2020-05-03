@@ -11,32 +11,33 @@ import mpl_toolkits.mplot3d.axes3d as p3
 plt.style.use('dark_background')
 
 # INPUT
-DATAFILE = "runs/propagateTest.csv"
-SPEED = 200 # __ times speed
+DATAFILE = "runs/reverseKepler.csv"
+SPEED = 2.5 # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
 AU = 149.6e6  # km
 muSun = 1.327178e11
-Earth = m.Planet(398600.441, 6378.136, AU, muSun, False)
+Mars = m.Planet(4.282837e4, 3396.2, 1.52367934 * AU, muSun, False)
+
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-#ax.set_aspect('equal')
+ax.set_aspect('equal')
 
 # Sphere:
 u = np.linspace(0, 2 * np.pi, 100)
 v = np.linspace(0, np.pi, 100)
-x = Earth.r * np.outer(np.cos(u), np.sin(v))
-y = Earth.r * np.outer(np.sin(u), np.sin(v))
-z = Earth.r * np.outer(np.ones(np.size(u)), np.cos(v))
+x = Mars.r * np.outer(np.cos(u), np.sin(v))
+y = Mars.r * np.outer(np.sin(u), np.sin(v))
+z = Mars.r * np.outer(np.ones(np.size(u)), np.cos(v))
 # Plot the surface
-ax.plot_surface(x, y, z, color='tab:cyan')
+ax.plot_surface(x, y, z, color='tab:orange')
 
 line, = ax.plot([], [], lw=2)
-ax.set_ylim(-15000, 15000)
-ax.set_xlim(-15000, 15000)
-ax.set_zlim(-15000, 15000)
+ax.set_ylim(-50000, 50000)
+ax.set_xlim(-50000, 50000)
+ax.set_zlim(-50000, 50000)
 # ax.grid(False)
 plt.axis("off")
 
