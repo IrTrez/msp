@@ -92,6 +92,7 @@ class Body:
 
         self.dt = 1 # default global timestep
 
+
         # self.tp = timeSincePeriapse
     def initPositionOrbit(self, r, v):
         """Set up an orbit using carthesian position and velocity vectors
@@ -123,21 +124,12 @@ class Body:
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
         if (altitudenorm < self.atmosphericLimitAltitude and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
-            print("atmos on")
 
             adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
         
         
-        # this is only a way of telling the program to create a manoeuver
-        
-        # if self.PeriapsisCheck():
-        #     if self.counter==0:
-        #         self.AddManoeuvers(self.orbitalPeriod/2,self.ParkingOrbit())
-        #     self.counter += 1
-        
-        # self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
-        self.initPositionOrbit(rnew, vnew)
+        self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         rlist = []
@@ -167,27 +159,27 @@ class Body:
         return rlist
 
 
-    def refreshKeplerOrbit(self, t):
-        # might be deprecated
-        print("refreshKeplerOrbit is deprecated")
-        self.meanMotion = (self.mu/(self.a**3))
-        self.meanAnomaly = self.meanMotion * (t - self.tp)
-        if self.e == 1:
-            print("Something crazy has happened")
-            e = 1 + 10e-10  # ;)
-        # True anomaly, normally theta now v
-        if self.e < 1:
-            E = self.findEccentricAnomaly()
-            self.trueAnomaly = acos(
-                (cos(E) - self.e) / (1 - e*cos(E)))
-            self.fpa = asin((self.e*sin(E)) /
-                                 math.sqrt(1 - (self.e)**2 * (cos(E))**2))
-        else:
-            H = self.findHyperbolicAnomaly()
-            self.trueAnomaly = acos(
-                (cosh(H) - self.e) / (1 - self.e*cosh(H)))
-            self.fpa = math.sqrt(((self.e)**2 - 1) /
-                                 ((self.e)**2 * (cosh(H))**2) - 1)
+    # def refreshKeplerOrbit(self, t):
+    #     # might be deprecated
+    #     print("refreshKeplerOrbit is deprecated")
+    #     self.meanMotion = (self.mu/(self.a**3))
+    #     self.meanAnomaly = self.meanMotion * (t - self.tp)
+    #     if self.e == 1:
+    #         print("Something crazy has happened")
+    #         e = 1 + 10e-10  # ;)
+    #     # True anomaly, normally theta now v
+    #     if self.e < 1:
+    #         E = self.findEccentricAnomaly()
+    #         self.trueAnomaly = acos(
+    #             (cos(E) - self.e) / (1 - e*cos(E)))
+    #         self.fpa = asin((self.e*sin(E)) /
+    #                              math.sqrt(1 - (self.e)**2 * (cos(E))**2))
+    #     else:
+    #         H = self.findHyperbolicAnomaly()
+    #         self.trueAnomaly = acos(
+    #             (cosh(H) - self.e) / (1 - self.e*cosh(H)))
+    #         self.fpa = math.sqrt(((self.e)**2 - 1) /
+    #                              ((self.e)**2 * (cosh(H))**2) - 1)
 
 
     def findEccentricAnomaly(self):
@@ -517,7 +509,7 @@ class Body:
         return v
 
 
-    def AddManoeuvers(self, clock, dv):
+    def AddManoeuverByVector(self, clock, dv):
         '''
 
             clock (float) -- clock of manoeuvers
@@ -526,3 +518,14 @@ class Body:
         '''
         
         self.manoeuvers[clock]=dv
+
+    def addManouvreByDirection(self, time, dv, type):
+        """[summary]
+
+        Arguments:
+            time {float} -- time
+            dv {float} -- normal value of deltav
+            type {string} -- type(tangential, radial and normal)
+
+            adds {time:dv(vector)} to manouvresDict
+        """
