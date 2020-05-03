@@ -6,7 +6,6 @@ import time
 from math import acos, cos, cosh, asin, sin,sinh, exp
 # import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 import pandas as pd
-print("Fix the gdot in keplerTime")
 
 
 class Atmosphere:
