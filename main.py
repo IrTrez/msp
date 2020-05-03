@@ -139,13 +139,11 @@ class Body:
         
         # self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
         self.initPositionOrbit(rnew, vnew)
-        print(rnew)
-
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         rlist = []
         for deltat in tqdm(range((int(timeJump / abs(dtAtmospheric))) + 1)):
-            if np.sqrt(self.r.dot(self.r)) + 10 > self.parentRSOI:
+            if np.sqrt(self.r.dot(self.r)) + 1000 > self.parentRSOI:
                 # sphere of influence check
                 print("Body has left sphere of influence")
                 print("Radius: ", self.r)
@@ -290,38 +288,39 @@ class Body:
 
         if alpha > 0.000001:
             assert (alpha != 1), "Alpha in Kepler Time is 1"
-            chi0 = np.sqrt(self.mu) * dt * alpha
+            chi = np.sqrt(self.mu) * dt * alpha
         elif abs(alpha) < 0.000001:
             print("parabola error in keplerTime")
         elif alpha < -0.000001:  # e>1
             alphainv = 1/alpha  # this is actually semi major axis
-            chi0 = getSign(dt) * np.sqrt(-alphainv) * np.log((-2 * self.mu * alpha * dt) / (
-                np.dot(r, v) + (getSign(dt) * math.sqrt(-self.mu * alphainv) * (1-(rnorm * alpha)))))
+            signOfDt = getSign(dt)
+            upperTemp = (-2 * self.mu * alpha * dt)
+            lowerTemp = np.dot(r,v) + (signOfDt * np.sqrt(-self.mu * alphainv) * (1 - rnorm*alpha))
+            chi = signOfDt * np.sqrt(-alphainv) * np.log((upperTemp/lowerTemp))
 
-        chi = chi0
-        counter = 0
+
         while True:
             chiLast = chi
-            psi = chi**2 * alpha
+            psi = chi * chi * alpha
             c2, c3 = self.c2_c3(psi)
 
-            rr = (chi**2 * c2) + ((np.dot(r, v) / np.sqrt(self.mu)) * chi * (1 - (psi * c3))) + (rnorm * (1 - (psi * c2)))
+            rr = (chi * chi * c2) + ((np.dot(r,v)/self.mu) * chi * (1-psi*c3)) + (rnorm * (1-psi*c2))
 
-            chi += ((np.sqrt(self.mu) * dt) - (c3 * chi**3) - ((np.dot(r, v) / np.sqrt(self.mu)) * c2 * chi**2) - (rnorm * chi * (1-(psi*c3)))) / rr
-            print(abs(chiLast-chi))
+            chi += ((np.sqrt(self.mu) * dt) - (chi*chi*chi*c3) - ((np.dot(r, v)/self.mu)*chi*chi*c2) - (rnorm*chi*(1-psi*c3)))/rr
+
             if abs(chiLast-chi) < 10e-6:
                 break
-            counter +=1
-        print("chi:",chi, "iters:", counter)
-        f = 1 - ((chi**2 / rnorm) * c2)
+
+
+        f = 1 - ((chi*chi / rnorm) * c2)
         fdot = (np.sqrt(self.mu) / (rr * rnorm)) * chi * ((psi*c3) - 1)
-        g = dt - ((chi**3 / np.sqrt(self.mu)) * c3)
-        gdot = 1 - ((chi**2 / rr) * c2)
+        g = dt - ((chi*chi*chi / np.sqrt(self.mu)) * c3)
+        gdot = 1 - ((chi*chi / rr) * c2)
 
         rnew = (f * r) + (g * v)
         vnew = (fdot * r) + (gdot * v)
-        succes = (f*gdot) - (fdot*g)
-        # print(rnew)
+        succes = (f * gdot) - (fdot * g)
+        assert abs(succes-1) < 10e-6, "Succes is not 1 but: " + str(succes)
         return rnew, vnew
 
 
