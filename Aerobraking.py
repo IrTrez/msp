@@ -9,10 +9,9 @@ import math
 from math import exp
 plt.style.use('seaborn-pastel')
 
-DATAFILE = "runs/reverseKepler.csv"
+DATAFILE = "runs/Aerobraking.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 2.5  # __ times speed
-PERIAPSEALTITUDE = 40
+SPEED = 250  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -25,10 +24,10 @@ limitAltitude = 260 # 260  #[km]. At this altitude density is just below 1*10^-1
 Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Mars = m.Planet(4.282837e4, 3396.2, 1.52367934 * AU, muSun, Mars_atmosphere)
 
-r = np.array([0, 0, -Mars.r-PERIAPSEALTITUDE])
-v = np.array([-5.556647648, 0, 0])
+r = np.array([18624.39849736424, 0.0, 9243.34824488878])
+v = np.array([-2.1546930007356457, 0.0, -2.0945283118662372])
 
-CD = 1.2
+CD = 1.23
 surfaceArea = 3.6**2 * math.pi
 
 spacecraft = m.Body(Mars, 3000, CD, surfaceArea )
@@ -49,38 +48,38 @@ ax.plot_surface(x, y, z, color='tab:orange')
 
 
 # PROPAGATE Here
-dt = -80
-rlist = spacecraft.propagate(6000, dtAtmospheric = dt, dtNormal = dt)
+dt = 3
+spacecraft.AddManoeuverByDirection()
+rlist = spacecraft.propagate(15000, DATAFILE, True, dtAtmospheric = dt, dtNormal = dt)
 # print("Absolute distance:", np.sqrt(spacecraft.r.dot(spacecraft.r)))
 # print("Sphere of influence:", Mars.rsoi)
-print("Starting vectors: ")
-print("r = np.array([", spacecraft.r[0], ",", spacecraft.r[1], ",", spacecraft.r[2], "])")
-print("v = np.array([", spacecraft.v[0], ",", spacecraft.v[1], ",", spacecraft.v[2], "])")
+# print(spacecraft.r)
+print(np.sqrt(spacecraft.v.dot(spacecraft.v)))
+print(spacecraft.e)
 
 
 
+ax.set_ylim(-50000, 50000)
+ax.set_xlim(-50000, 50000)
+ax.set_zlim(-50000, 50000)
 
-# ax.set_ylim(-50000, 50000)
-# ax.set_xlim(-50000, 50000)
-# ax.set_zlim(-50000, 50000)
+data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
+droppedPoints = []
+for u in range(len(data)):
+    if u % SPEED != 0:
+        droppedPoints.append(u)
 
-# data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
-# droppedPoints = []
-# for u in range(len(data)):
-#     if u % SPEED != 0:
-#         droppedPoints.append(u)
+data = data.drop(droppedPoints, axis=0)
+x = data.loc[:,"x"].to_numpy()
+y = data.loc[:,"y"].to_numpy()
+z = data.loc[:,"z"].to_numpy()
 
-# data = data.drop(droppedPoints, axis=0)
-# x = data.loc[:,"x"].to_numpy()
-# y = data.loc[:,"y"].to_numpy()
-# z = data.loc[:,"z"].to_numpy()
-
-# # print(rlist)
-# plt.pause(1)
-# for u in tqdm(range(len(x))):
-#     # print(deltat)
-#     ax.plot(x[0:u], y[0:u], z[0:u], color="g")
-#     # ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
-#     plt.pause(0.0000001)
-#     plt.clf
-# plt.pause(5)
+# print(rlist)
+plt.pause(1)
+for u in tqdm(range(len(x))):
+    # print(deltat)
+    ax.plot(x[0:u], y[0:u], z[0:u], color="g")
+    # ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
+    plt.pause(0.0000001)
+    plt.clf
+plt.pause(5)
