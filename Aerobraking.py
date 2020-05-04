@@ -49,7 +49,7 @@ ax.plot_surface(x, y, z, color='tab:orange')
 
 # PROPAGATE Here
 dt = 3
-spacecraft.AddManoeuverByDirection()
+# spacecraft.AddManoeuverByDirection()
 rlist = spacecraft.propagate(15000, DATAFILE, True, dtAtmospheric = dt, dtNormal = dt)
 # print("Absolute distance:", np.sqrt(spacecraft.r.dot(spacecraft.r)))
 # print("Sphere of influence:", Mars.rsoi)

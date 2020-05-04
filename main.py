@@ -54,6 +54,7 @@ class Body:
         self.clock = time.time()
         self.start = self.clock
         self.parentRSOI = parentBody.rsoi
+        self.manoeuvers = {}
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
             self.densityDict = parentBody.densityDict
@@ -85,8 +86,7 @@ class Body:
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
-        self.manoeuvers = {}
-        self.time = time.time()
+        # self.time = time.time()
         self.counter = 0        #only used to force add a manoeuver
         
 
@@ -271,23 +271,24 @@ class Body:
         # We call the universal parameter chi (weird greek capital X)
         vnorm = np.sqrt(v.dot(v))
         rnorm = np.sqrt(r.dot(r))
-
-        def getSign(x): return (1, -1)[x < 0]
+        sqrtmu = self.mu**0.5
+        rdotv = r.dot(v)
 
         eta = ((vnorm**2) / 2) - (self.mu/rnorm)
         alpha = ((-(vnorm**2)) / self.mu) + (2 / rnorm)
 
-        if alpha > 0.000001:
+        if alpha > 0:
             assert (alpha != 1), "Alpha in Kepler Time is 1"
-            chi = np.sqrt(self.mu) * dt * alpha
-        elif abs(alpha) < 0.000001:
-            print("parabola error in keplerTime")
-        elif alpha < -0.000001:  # e>1
+            chi = sqrtmu * dt * alpha
+        elif alpha < 0:  # e>1
             alphainv = 1/alpha  # this is actually semi major axis
-            signOfDt = getSign(dt)
-            upperTemp = (-2 * self.mu * alpha * dt)
-            lowerTemp = np.dot(r,v) + (signOfDt * np.sqrt(-self.mu * alphainv) * (1 - rnorm*alpha))
-            chi = signOfDt * np.sqrt(-alphainv) * np.log((upperTemp/lowerTemp))
+            chi = (np.sign(dt) * (-alphainv)**.5 *
+                      np.log((-2 * self.mu * alpha * dt) /
+                             (rdotv + np.sign(dt) *
+                              np.sqrt(-self.mu / alpha) * (1 - rnorm * alpha))))
+        else:
+            print("parabola in keplerTime")
+            chi = sqrtmu * dt / rnorm
 
 
         while True:
@@ -295,7 +296,7 @@ class Body:
             psi = chi * chi * alpha
             c2, c3 = self.c2_c3(psi)
 
-            rr = (chi * chi * c2) + ((np.dot(r,v)/self.mu) * chi * (1-psi*c3)) + (rnorm * (1-psi*c2))
+            rr = (chi * chi * c2) + ((rdotv/sqrtmu) * chi * (1-psi*c3)) + (rnorm * (1-psi*c2))
 
             chi += ((np.sqrt(self.mu) * dt) - (chi*chi*chi*c3) - ((np.dot(r, v)/self.mu)*chi*chi*c2) - (rnorm*chi*(1-psi*c3)))/rr
 
@@ -499,13 +500,14 @@ class Body:
             v (ndarray) -- vnew, the most recent calculations for current velocity in cartesian coordinates
 
         '''
-        ManoeuverRemoval = []
-        for i in self.manoeuvers:
-            if abs(i-self.clock)<=100:
-                v = v + self.manoeuvers[i]
-                ManoeuverRemoval.append(i)
-        for i in ManoeuverRemoval:
-            self.manoeuvers.pop(i)
+        if len(self.manoeuvers) != 0:
+            ManoeuverRemoval = []
+            for i in self.manoeuvers:
+                if abs(i-self.clock)<=100:
+                    v = v + self.manoeuvers[i]
+                    ManoeuverRemoval.append(i)
+            for i in ManoeuverRemoval:
+                self.manoeuvers.pop(i)
         return v
 
 
