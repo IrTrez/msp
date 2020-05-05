@@ -414,22 +414,22 @@ class Body:
         if p is None:
             p = a * (1 - e**2)
 
-        # circular equatorial
-        if e < 1 and i == 0:
-            assert (lambda_true is not None), "Lambda_True is not given"
-            omega, Omega = 0.0, 0.0
+        # # circular equatorial
+        # if e < 1 and i == 0:
+        #     assert (lambda_true is not None), "Lambda_True is not given"
+        #     omega, Omega = 0.0, 0.0
         
-        # circular inclined
-        elif e == 0 and i != 0:
-            assert (u is not None), "u is not given"
-            omega = 0.0
-            trueAnomaly = u
+        # # circular inclined
+        # elif e == 0 and i != 0:
+        #     assert (u is not None), "u is not given"
+        #     omega = 0.0
+        #     trueAnomaly = u
 
-        # elliptical equatorial
-        elif e == 0 and i == 0:
-            assert (u is not None), "omega_true is not given"
-            Omega = 0.0
-            omega = omega_true
+        # # elliptical equatorial
+        # elif e == 0 and i == 0:
+        #     assert (u is not None), "omega_true is not given"
+        #     Omega = 0.0
+        #     omega = omega_true
 
         rpqw = np.array([((p * cos(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
                          ((p * sin(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
@@ -508,7 +508,7 @@ class Body:
         return v
 
 
-    def AddManoeuverByVector(self, clock, dv):
+    def addManoeuverByVector(self, clock, dv):
         '''
 
             clock (float) -- clock of manoeuvers
@@ -523,20 +523,37 @@ class Body:
 
         self.manoeuvers.append({"ID":latestID, "clock":clock, "dv":dv, "expired":False, "direction":(dv/np.sqrt(dv.dot(dv)))})
 
-    def addManouvreByDirection(self, clock, dv, type):
+    def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType):
         """[summary]
 
         Arguments:
             time {float} -- time
             dv {float} -- normal value of deltav
-            type {string} -- type(tangential, radial and normal)
+            type {string} -- type(tangential, radial and normal) or (t,r,n)
         """
+        manoeuvreTypes = ["tangential", "t", "radial", "r", "normal", "n"]
+        assert (manoeuvreType in manoeuvreTypes), "Incorrect manouvreType, use tangential, t, radial, r, normal or n"
+
         # gets latest ID
         if len(self.manoeuvers) == 0:
             latestID = 0
         else:
             latestID = len(self.manoeuvers)
 
-        ### ADD CREATION OF VECTORS HERE
+        # Create dv vector based on manoeuvretype and dvMagnitude
+        if (manoeuvreType == "tangential" or manoeuvreType == "t"):
+            direction = self.v/np.sqrt(self.v.dot(self.v))
+            dv = dvMagnitude * direction
+
+        if (manoeuvreType == "radial" or manoeuvreType == "r"):
+            direction = -self.r/np.sqrt(self.r.dot(self.r))
+            dv = dvMagnitude * direction
+
+        if (manoeuvreType == "normal" or manoeuvreType == "n"):
+            directionTangential = self.v/np.sqrt(self.v.dot(self.v))
+            directionRadial = -self.r/np.sqrt(self.r.dot(self.r))
+            directionNormal = np.cross(directionTangential,directionRadial)
+            direction = directionNormal/np.sqrt(directionNormal.dot(directionNormal))
+            dv = dvMagnitude * direction
 
         self.manoeuvers.append({"ID":latestID, "clock":clock, "dv":dv, "expired":False, "direction":(dv/np.sqrt(dv.dot(dv)))})
