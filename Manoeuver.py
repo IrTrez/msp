@@ -11,7 +11,7 @@ plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/ManouvreTest.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 400  # __ times speed
+SPEED = 600  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -24,13 +24,12 @@ limitAltitude = 500 # 260  #[km]. At this altitude density is just below 1*10^-1
 Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
-p = 10167.790
-e = 0.58285
-i = math.radians(45)
+a = 10000
+e = 0
+i = math.radians(1)
 Omega = math.radians(30.89)
-omega = math.radians(53.38)
+omega = math.radians(80.0)
 trueAnomaly = math.radians(40)
-a = p / (1 - e**2)
 
 CD = 1.2
 surfaceArea = 3.6**2 * math.pi
@@ -53,7 +52,12 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 # Add manoeuvers before propagate
 
-spacecraft.AddManoeuverByVector(spacecraft.clock+spacecraft.orbitalPeriod,np.array([0,0,2]))
+
+# spacecraft.addManouvreByDirection(spacecraft.clock+ 1.5 * spacecraft.orbitalPeriod, 4, "n")
+# spacecraft.addManouvreByDirection(spacecraft.start * spacecraft.orbitalPeriod, -4, "r")
+spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, 6, "n")
+spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, -6, "t")
+spacecraft.addManouvreByDirection(spacecraft.start + 2 * spacecraft.orbitalPeriod, 1, "r")
 
 # PROPAGATE Here
 rlist = spacecraft.propagate(4*spacecraft.orbitalPeriod, DATAFILE, False)
@@ -81,4 +85,4 @@ for u in tqdm(range(len(x))):
     # ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
     plt.pause(0.0000001)
     plt.clf
-plt.pause(2)
+plt.pause(5)

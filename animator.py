@@ -11,8 +11,8 @@ import mpl_toolkits.mplot3d.axes3d as p3
 plt.style.use('dark_background')
 
 # INPUT
-DATAFILE = "runs/reverseKepler.csv"
-SPEED = 2.5 # __ times speed
+DATAFILE = "runs/ManouvreTest.csv"
+SPEED = 300 # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -35,9 +35,9 @@ z = Mars.r * np.outer(np.ones(np.size(u)), np.cos(v))
 ax.plot_surface(x, y, z, color='tab:orange')
 
 line, = ax.plot([], [], lw=2)
-ax.set_ylim(-50000, 50000)
-ax.set_xlim(-50000, 50000)
-ax.set_zlim(-50000, 50000)
+ax.set_ylim(-10000, 10000)
+ax.set_xlim(-10000, 10000)
+ax.set_zlim(-10000, 10000)
 # ax.grid(False)
 plt.axis("off")
 
