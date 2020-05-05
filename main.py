@@ -54,7 +54,7 @@ class Body:
         self.clock = time.time()
         self.start = self.clock
         self.parentRSOI = parentBody.rsoi
-        self.manoeuvers = {}
+        self.manoeuvers = []
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
             self.densityDict = parentBody.densityDict
@@ -86,7 +86,6 @@ class Body:
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
-        # self.time = time.time()
         self.counter = 0        #only used to force add a manoeuver
         
 
@@ -145,7 +144,7 @@ class Body:
                 print("Body crashed into surface")
                 print("Ending propagation")
                 # print("Simulation ran for: " + str(time.time() - self.start))
-                print("Radius:", self.r.dot(self.r), ":", self.r)
+                print("Radius:", np.sqrt(self.r.dot(self.r)), ":", self.r)
                 print("Altitude:", self.altitude.dot(self.altitude))
                 break
             #plus 500 is a safety margin as it's takeing the previous altitude
@@ -502,13 +501,10 @@ class Body:
 
         '''
         if len(self.manoeuvers) != 0:
-            ManoeuverRemoval = []
-            for i in self.manoeuvers:
-                if abs(i-self.clock)<=100:
-                    v = v + self.manoeuvers[i]
-                    ManoeuverRemoval.append(i)
-            for i in ManoeuverRemoval:
-                self.manoeuvers.pop(i)
+            for manoeuver in self.manoeuvers:
+                if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
+                    v += manoeuver["dv"]
+                    manoeuver["expired"] = True
         return v
 
 
@@ -519,16 +515,28 @@ class Body:
             dv (ndarray) -- delta v for maneuvers in cartesian coordinates
 
         '''
-        
-        self.manoeuvers[clock]=dv
+        # gets latest ID
+        if len(self.manoeuvers) == 0:
+            latestID = 0
+        else:
+            latestID = len(self.manoeuvers)
 
-    def addManouvreByDirection(self, time, dv, type):
+        self.manoeuvers.append({"ID":latestID, "clock":clock, "dv":dv, "expired":False, "direction":(dv/np.sqrt(dv.dot(dv)))})
+
+    def addManouvreByDirection(self, clock, dv, type):
         """[summary]
 
         Arguments:
             time {float} -- time
             dv {float} -- normal value of deltav
             type {string} -- type(tangential, radial and normal)
-
-            adds {time:dv(vector)} to manouvresDict
         """
+        # gets latest ID
+        if len(self.manoeuvers) == 0:
+            latestID = 0
+        else:
+            latestID = len(self.manoeuvers)
+
+        ### ADD CREATION OF VECTORS HERE
+
+        self.manoeuvers.append({"ID":latestID, "clock":clock, "dv":dv, "expired":False, "direction":(dv/np.sqrt(dv.dot(dv)))})

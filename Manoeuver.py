@@ -11,7 +11,7 @@ plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/ManouvreTest.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 250  # __ times speed
+SPEED = 400  # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -53,7 +53,7 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 # Add manoeuvers before propagate
 
-spacecraft.AddManoeuvers(spacecraft.clock+2*spacecraft.orbitalPeriod,np.array([0,0,2]))
+spacecraft.AddManoeuverByVector(spacecraft.clock+spacecraft.orbitalPeriod,np.array([0,0,2]))
 
 # PROPAGATE Here
 rlist = spacecraft.propagate(4*spacecraft.orbitalPeriod, DATAFILE, False)
