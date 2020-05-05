@@ -24,8 +24,8 @@ limitAltitude = 260 # 260  #[km]. At this altitude density is just below 1*10^-1
 Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Mars = m.Planet(4.282837e4, 3396.2, 1.52367934 * AU, muSun, Mars_atmosphere)
 
-r = np.array([18624.39849736424, 0.0, 9243.34824488878])
-v = np.array([-2.1546930007356457, 0.0, -2.0945283118662372])
+r = np.array([19466.487519400343, 0.0, 8689.063496665178])
+v = np.array([-2.3959379440133333, 0.0, -2.0502993355905814])
 
 CD = 1.23
 surfaceArea = 3.6**2 * math.pi
@@ -48,9 +48,9 @@ ax.plot_surface(x, y, z, color='tab:orange')
 
 
 # PROPAGATE Here
-dt = 3
+dt = 8
 # spacecraft.AddManoeuverByDirection()
-rlist = spacecraft.propagate(15000, DATAFILE, True, dtAtmospheric = dt, dtNormal = dt)
+rlist = spacecraft.propagate(14500, DATAFILE, True, dtAtmospheric = dt, dtNormal = dt)
 # print("Absolute distance:", np.sqrt(spacecraft.r.dot(spacecraft.r)))
 # print("Sphere of influence:", Mars.rsoi)
 # print(spacecraft.r)
