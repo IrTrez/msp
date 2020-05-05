@@ -66,13 +66,15 @@ ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)
 ax.set_zlim(-30000, 30000)
 
-data = pd.read_csv(DATAFILE, names=["x", "y", "z"])
+data = pd.read_csv(DATAFILE, index_col=0)
+print(data.head())
 droppedPoints = []
 for u in range(len(data)):
     if u % SPEED != 0:
         droppedPoints.append(u)
 
 data = data.drop(droppedPoints, axis=0)
+clock = data.loc[:,"clock"].to_numpy()
 x = data.loc[:,"x"].to_numpy()
 y = data.loc[:,"y"].to_numpy()
 z = data.loc[:,"z"].to_numpy()
@@ -81,6 +83,7 @@ z = data.loc[:,"z"].to_numpy()
 plt.pause(1)
 for u in tqdm(range(len(x))):
     # print(deltat)
+    currentClock=clock[u]
     ax.plot(x[0:u], y[0:u], z[0:u], color="g")
     # ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
     plt.pause(0.0000001)

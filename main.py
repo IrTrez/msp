@@ -132,6 +132,7 @@ class Body:
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         rlist = []
+        clocklist = []
         for deltat in tqdm(range((int(timeJump / abs(dtAtmospheric))) + 1)):
             if np.sqrt(self.r.dot(self.r)) + 1000 > self.parentRSOI:
                 # sphere of influence check
@@ -151,11 +152,16 @@ class Body:
             if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 500: 
                 self.refreshByTimestep(dtAtmospheric , atmospheric)
                 rlist.append(self.r)
+                clocklist.append(self.clock)
             else:
                 self.refreshByTimestep(dtNormal, atmospheric)
                 rlist.append(self.r)
+                clocklist.append(self.clock)
         if saveFile is not None:
-            np.savetxt(saveFile, rlist, delimiter=",")
+            # np.savetxt(saveFile, rlist, delimiter=",")
+            rlist = np.array(rlist).T
+            data = pd.DataFrame({"clock":clocklist, "x":rlist[0], "y":rlist[1], "z":rlist[2]})
+            data.to_csv(saveFile, sep=",")
         return rlist
 
 
