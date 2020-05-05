@@ -145,7 +145,8 @@ class Body:
                 print("Body crashed into surface")
                 print("Ending propagation")
                 # print("Simulation ran for: " + str(time.time() - self.start))
-                print(self.r)
+                print("Radius:", self.r.dot(self.r), ":", self.r)
+                print("Altitude:", self.altitude.dot(self.altitude))
                 break
             #plus 500 is a safety margin as it's takeing the previous altitude
             if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 500: 
