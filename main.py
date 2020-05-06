@@ -89,7 +89,10 @@ class Body:
         self.counter = 0        #only used to force add a manoeuver
         self.TimeSincePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (
                     self.findEccentricAnomaly() - self.e * sin(self.findEccentricAnomaly()))
-        self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
+        if self.TimeSincePeriapsis>>self.orbitalPeriod/2:
+            self.TimeSinceApoapsis =  self.TimeSincePeriapsis - self.orbitalPeriod / 2
+        else:
+            self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
         self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
         self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
 
@@ -116,9 +119,10 @@ class Body:
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
         self.counter = 0        #only used to force add a manoeuver
-        self.TimeSincePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (
-                    self.findEccentricAnomaly() - self.e * sin(self.findEccentricAnomaly()))
-        self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
+        if self.TimeSincePeriapsis >> self.orbitalPeriod / 2:
+            self.TimeSinceApoapsis = self.TimeSincePeriapsis - self.orbitalPeriod / 2
+        else:
+            self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
         self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
         self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
 
@@ -228,6 +232,7 @@ class Body:
         Returns:
             float -- hyperbolic anomaly [rad]
         """
+
         if self.e < 1.6:
             if (self.meanMotion > -1 * math.pi and self.meanMotion < 0)or self.meanMotion > math.pi:
                 H = self.meanAnomaly - self.e
