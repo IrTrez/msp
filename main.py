@@ -87,7 +87,11 @@ class Body:
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
         self.counter = 0        #only used to force add a manoeuver
-        
+        self.TimeToPeriapsis = math.sqrt(self.a**3/self.mu)*(-self.e*sin(0))
+        self.TimeToApoapsis = math.sqrt(self.a ** 3 / self.mu) * (math.pi-self.e * sin(math.pi))
+        self.TimeToNextPeriapsis=self.orbitalPeriod-self.TimeToPeriapsis
+        self.TimeToNextApoapsis=self.orbitalPeriod-self.TimeToApoapsis
+
 
         self.dt = 1 # default global timestep
 
