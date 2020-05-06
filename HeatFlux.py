@@ -11,7 +11,7 @@ AU = 149.6e6  # km
 r_a=1.6660*AU
 r_p=1.3814*AU
 e_m=(r_a-r_p)/(r_a+r_p)
-a=1.524*AU
+a=0.5*(r_a+r_p)
 i_m=25*pi/180 #rot. axis inclination
 F_0=590 #W/m^2
 L=3.9e26 #[W]
@@ -35,5 +35,4 @@ def Flux(theta, l): #with clear sky #heat flux at midday
     #tilt_eff=i_m*cos(theta)
     flux=flux_str*cos(l)
     return flux
-print(Flux(0,0))
 
