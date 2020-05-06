@@ -472,7 +472,7 @@ class Body:
 
         self.checkA = False
 
-        if math.isclose(np.sqrt(self.r.dot(self.r)), self.apoapsis, rel_tol=1e-4):
+        if self.findEccentricAnomaly()==180:
             self.checkA = True
 
         return self.checkA
@@ -486,7 +486,7 @@ class Body:
 
         self.checkP = False
 
-        if math.isclose(np.sqrt(self.r.dot(self.r)), self.apoapsis, rel_tol=1e-4):
+        if self.findEccentricAnomaly()==0 or self.findHyperbolicAnomaly()==0:
             self.checkP = True
 
         return self.checkP
