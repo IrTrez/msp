@@ -55,6 +55,8 @@ class Body:
         self.start = self.clock
         self.parentRSOI = parentBody.rsoi
         self.manoeuvers = []
+        self.PeriapsisToApoapsis = True
+        self.ApoapsisToPeriapsis = False
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
             self.densityDict = parentBody.densityDict
@@ -87,14 +89,33 @@ class Body:
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
         self.counter = 0        #only used to force add a manoeuver
-        self.TimeSincePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (
-                    self.findEccentricAnomaly() - self.e * sin(self.findEccentricAnomaly()))
-        if self.TimeSincePeriapsis>>self.orbitalPeriod/2:
-            self.TimeSinceApoapsis =  self.TimeSincePeriapsis - self.orbitalPeriod / 2
-        else:
+        if self.e < 1:
+            self.EccentricAnomaly = math.acos(
+                (self.e + math.cos(self.trueAnomaly)) / (1 + self.e * math.cos(self.trueAnomaly)))
+        if self.e > 1:
+            self.EccentricAnomaly = math.acos(
+                (self.e + math.cos(self.trueAnomaly)) / (1 + self.e * math.cos(self.trueAnomaly)))
+
+        self.TimePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (
+                self.EccentricAnomaly - self.e * sin(self.EccentricAnomaly))
+
+        if self.TimePeriapsis < 1 :
+            self.PeriapsisToApoapsis = True
+            self.ApoapsisToPeriapsis =False
+
+        if self.TimePeriapsis > self.orbitalPeriod/2-0.01*self.orbitalPeriod:
+            self.PeriapsisToApoapsis = False
+            self.ApoapsisToPeriapsis = True
+        if self.PeriapsisToApoapsis:
+            self.TimeSincePeriapsis=self.TimePeriapsis
             self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
-        self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
-        self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
+            self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
+            self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
+        if self.ApoapsisToPeriapsis:
+            self.TimeSincePeriapsis = self.orbitalPeriod / 2 + self.TimeSinceApoapsis
+            self.TimeSinceApoapsis = self.orbitalPeriod / 2 - self.TimePeriapsis
+            self.TimeToNextPeriapsis = self.TimePeriapsis
+            self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
 
 
         self.dt = 1 # default global timestep
@@ -119,18 +140,44 @@ class Body:
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
         self.counter = 0        #only used to force add a manoeuver
-        if self.TimeSincePeriapsis >> self.orbitalPeriod / 2:
-            self.TimeSinceApoapsis = self.TimeSincePeriapsis - self.orbitalPeriod / 2
-        else:
+
+        if self.e < 1:
+            self.EccentricAnomaly = math.acos(
+                (self.e + math.cos(self.trueAnomaly)) / (1 + self.e * math.cos(self.trueAnomaly)))
+        if self.e > 1:
+            self.EccentricAnomaly = math.acos(
+                (self.e + math.cos(self.trueAnomaly)) / (1 + self.e * math.cos(self.trueAnomaly)))
+
+        self.TimePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (
+                self.EccentricAnomaly - self.e * sin(self.EccentricAnomaly))
+
+        if self.TimePeriapsis < 1:
+            self.PeriapsisToApoapsis = True
+            self.ApoapsisToPeriapsis =False
+
+
+        if self.TimePeriapsis > self.orbitalPeriod/2-0.01*self.orbitalPeriod:
+            self.PeriapsisToApoapsis = False
+            self.ApoapsisToPeriapsis = True
+
+        if self.PeriapsisToApoapsis:
+            self.TimeSincePeriapsis=self.TimePeriapsis
             self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
-        self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
-        self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
+            self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
+            self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
+        if self.ApoapsisToPeriapsis:
+            self.TimeSincePeriapsis = self.orbitalPeriod / 2 + self.TimeSinceApoapsis
+            self.TimeSinceApoapsis = self.orbitalPeriod / 2 - self.TimePeriapsis
+            self.TimeToNextPeriapsis = self.TimePeriapsis
+            self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
+
 
         self.dt = 1 # default global timestep
 
 
     def refreshByTimestep(self, dt, atmospheric):
         self.clock += dt
+        print(self.TimeSincePeriapsis)
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
