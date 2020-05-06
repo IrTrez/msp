@@ -89,8 +89,8 @@ class Body:
         self.counter = 0        #only used to force add a manoeuver
         self.TimeSincePeriapsis = math.sqrt(self.a**3/self.mu)*(-self.e*sin(0))
         self.TimeSinceApoapsis = math.sqrt(self.a ** 3 / self.mu) * (math.pi-self.e * sin(math.pi))
-        self.TimeToNextPeriapsis=self.orbitalPeriod-self.TimeToPeriapsis
-        self.TimeToNextApoapsis=self.orbitalPeriod-self.TimeToApoapsis
+        self.TimeToNextPeriapsis=self.orbitalPeriod-self.TimeSincePeriapsis
+        self.TimeToNextApoapsis=self.orbitalPeriod-self.TimeSinceApoapsis
 
 
         self.dt = 1 # default global timestep
@@ -117,8 +117,8 @@ class Body:
         self.counter = 0        #only used to force add a manoeuver
         self.TimeSincePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (-self.e * sin(0))
         self.TimeSinceApoapsis = math.sqrt(self.a ** 3 / self.mu) * (math.pi - self.e * sin(math.pi))
-        self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeToPeriapsis
-        self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeToApoapsis
+        self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
+        self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
 
         self.dt = 1 # default global timestep
 
