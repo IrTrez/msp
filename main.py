@@ -87,10 +87,11 @@ class Body:
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
         self.counter = 0        #only used to force add a manoeuver
-        self.TimeSincePeriapsis = math.sqrt(self.a**3/self.mu)*(-self.e*sin(0))
-        self.TimeSinceApoapsis = math.sqrt(self.a ** 3 / self.mu) * (math.pi-self.e * sin(math.pi))
-        self.TimeToNextPeriapsis=self.orbitalPeriod-self.TimeSincePeriapsis
-        self.TimeToNextApoapsis=self.orbitalPeriod-self.TimeSinceApoapsis
+        self.TimeSincePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (
+                    self.findEccentricAnomaly() - self.e * sin(self.findEccentricAnomaly()))
+        self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
+        self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
+        self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
 
 
         self.dt = 1 # default global timestep
@@ -115,8 +116,9 @@ class Body:
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
         self.counter = 0        #only used to force add a manoeuver
-        self.TimeSincePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (-self.e * sin(0))
-        self.TimeSinceApoapsis = math.sqrt(self.a ** 3 / self.mu) * (math.pi - self.e * sin(math.pi))
+        self.TimeSincePeriapsis = math.sqrt(self.a ** 3 / self.mu) * (
+                    self.findEccentricAnomaly() - self.e * sin(self.findEccentricAnomaly()))
+        self.TimeSinceApoapsis = self.orbitalPeriod / 2 + self.TimeSincePeriapsis
         self.TimeToNextPeriapsis = self.orbitalPeriod - self.TimeSincePeriapsis
         self.TimeToNextApoapsis = self.orbitalPeriod - self.TimeSinceApoapsis
 
@@ -125,6 +127,7 @@ class Body:
 
     def refreshByTimestep(self, dt, atmospheric):
         self.clock += dt
+        print(self.TimeToNextApoapsis)
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
