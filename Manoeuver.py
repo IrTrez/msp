@@ -52,12 +52,9 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 
 # Add manoeuvers before propagate
 
-
-# spacecraft.addManouvreByDirection(spacecraft.clock+ 1.5 * spacecraft.orbitalPeriod, 4, "n")
-# spacecraft.addManouvreByDirection(spacecraft.start * spacecraft.orbitalPeriod, -4, "r")
 spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, 6, "n")
 spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, -6, "t")
-spacecraft.addManouvreByDirection(spacecraft.start + 2 * spacecraft.orbitalPeriod, 1, "r")
+spacecraft.addManouvreByDirection(spacecraft.start + 2 * spacecraft.orbitalPeriod, 1.5, "r")
 
 # PROPAGATE Here
 rlist = spacecraft.propagate(4*spacecraft.orbitalPeriod, DATAFILE, False)
@@ -67,7 +64,6 @@ ax.set_xlim(-30000, 30000)
 ax.set_zlim(-30000, 30000)
 
 data = pd.read_csv(DATAFILE, index_col=0)
-print(data.head())
 droppedPoints = []
 for u in range(len(data)):
     if u % SPEED != 0:
@@ -79,12 +75,31 @@ x = data.loc[:,"x"].to_numpy()
 y = data.loc[:,"y"].to_numpy()
 z = data.loc[:,"z"].to_numpy()
 
+manoeuvreData = pd.read_csv((DATAFILE[:-4] + "_man.csv"), index_col="ID").loc[:,["clock", "manType","r"]]
+
 # print(rlist)
 plt.pause(1)
 for u in tqdm(range(len(x))):
-    # print(deltat)
     currentClock=clock[u]
     ax.plot(x[0:u], y[0:u], z[0:u], color="g")
+    for i, manoeuver in manoeuvreData.iterrows():
+        if manoeuver["clock"] > currentClock and manoeuver["clock"] < currentClock+SPEED:
+            if manoeuver["manType"] == "t":
+                manMarker = "o"
+                manColor = "lime"
+            if manoeuver["manType"] == "r":
+                manMarker = "o"
+                manColor = "cyan"
+            if manoeuver["manType"] == "n":
+                manMarker = "^"
+                manColor = "m"
+            # general manoeuvre
+            if manoeuver["manType"] == "g":
+                manMarker = "+"
+                manColor = "r"
+            manoeuverPos = manoeuver["r"][1:-1].split(" ")
+            manoeuverPos = [float(x) for x in manoeuverPos if x]
+            ax.scatter(*manoeuverPos, marker = manMarker, color = manColor)
     # ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
     plt.pause(0.0000001)
     plt.clf
