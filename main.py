@@ -158,10 +158,13 @@ class Body:
                 rlist.append(self.r)
                 clocklist.append(self.clock)
         if saveFile is not None:
-            # np.savetxt(saveFile, rlist, delimiter=",")
             rlist = np.array(rlist).T
             data = pd.DataFrame({"clock":clocklist, "x":rlist[0], "y":rlist[1], "z":rlist[2]})
             data.to_csv(saveFile, sep=",")
+
+            manoeuvreSavefile = saveFile[:-4] + "_man" + ".csv"
+            manoeuvreData = pd.DataFrame(self.manoeuvers)
+            manoeuvreData.to_csv(manoeuvreSavefile)
         return rlist
 
 
@@ -510,6 +513,7 @@ class Body:
             for manoeuver in self.manoeuvers:
                 if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
                     v += manoeuver["dv"]
+                    self.manoeuvers[manoeuver["ID"]]["r"] = self.r
                     manoeuver["expired"] = True
         return v
 
@@ -527,7 +531,8 @@ class Body:
         else:
             latestID = len(self.manoeuvers)
 
-        self.manoeuvers.append({"ID":latestID, "clock":clock, "dv":dv, "expired":False, "direction":(dv/np.sqrt(dv.dot(dv)))})
+        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
+            dv/np.sqrt(dv.dot(dv))), "manType": "g"})
 
     def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType):
         """[summary]
@@ -548,18 +553,22 @@ class Body:
 
         # Create dv vector based on manoeuvretype and dvMagnitude
         if (manoeuvreType == "tangential" or manoeuvreType == "t"):
+            manType = "t"
             direction = self.v/np.sqrt(self.v.dot(self.v))
             dv = dvMagnitude * direction
 
         if (manoeuvreType == "radial" or manoeuvreType == "r"):
+            manType = "r"
             direction = -self.r/np.sqrt(self.r.dot(self.r))
             dv = dvMagnitude * direction
 
         if (manoeuvreType == "normal" or manoeuvreType == "n"):
+            manType = "n"
             directionTangential = self.v/np.sqrt(self.v.dot(self.v))
             directionRadial = -self.r/np.sqrt(self.r.dot(self.r))
             directionNormal = np.cross(directionTangential,directionRadial)
             direction = directionNormal/np.sqrt(directionNormal.dot(directionNormal))
             dv = dvMagnitude * direction
 
-        self.manoeuvers.append({"ID":latestID, "clock":clock, "dv":dv, "expired":False, "direction":(dv/np.sqrt(dv.dot(dv)))})
+        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
+            dv/np.sqrt(dv.dot(dv))), "manType": manType})
