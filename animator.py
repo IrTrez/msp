@@ -12,8 +12,8 @@ import os.path
 plt.style.use('dark_background')
 
 # INPUT
-DATAFILE = "runs/ManouvreTest.csv"
-SPEED = 250 # __ times speed
+DATAFILE = "runs/Aerobraking.csv"
+SPEED = 500 # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -39,9 +39,9 @@ ax.plot_surface(x, y, z, color='tab:orange')
 line, = ax.plot([], [], lw=2)
 scatt, = ax.plot([], [], linestyle="", marker="o", color="white")
 
-ax.set_ylim(-10000, 10000)
-ax.set_xlim(-10000, 10000)
-ax.set_zlim(-10000, 10000)
+ax.set_ylim(-40000, 40000)
+ax.set_xlim(-40000, 40000)
+ax.set_zlim(-40000, 40000)
 plt.axis("off")
 
 manoeuvreFileAvailable = os.path.isfile(DATAFILE[:-4] + "_man.csv")
@@ -101,7 +101,7 @@ anim = FuncAnimation(fig, animate, frames= steps, interval=10, blit=True)
 
 fullSaveName = "animations/" + savename + ".mp4"
 print("Saving to " + fullSaveName)
-anim.save(fullSaveName, fps=30, extra_args=['-vcodec', 'libx264'])
+anim.save(fullSaveName, fps=30, extra_args=['-vcodec', 'libx264'],dpi=300)
 # plot the orbit
 # ax.plot(rlist[0], rlist[1], rlist[2], color="g")
 

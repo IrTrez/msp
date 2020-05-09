@@ -12,7 +12,7 @@ plt.style.use('seaborn-pastel')
 DATAFILE = "runs/reverseKepler.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
 SPEED = 2.5  # __ times speed
-PERIAPSEALTITUDE = 40
+PERIAPSEALTITUDE = 3000
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -26,7 +26,7 @@ Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Mars = m.Planet(4.282837e4, 3396.2, 1.52367934 * AU, muSun, Mars_atmosphere)
 
 r = np.array([0, 0, -Mars.r-PERIAPSEALTITUDE])
-v = np.array([-5.556647648, 0, 0])
+v = np.array([-4.518996301, 0, 0])
 
 CD = 1.2
 surfaceArea = 3.6**2 * math.pi
