@@ -1,6 +1,7 @@
 import math
 from math import sqrt, cos, pi
 import time
+import numpy as np
 
 AU = 149.6e6  # km
 muSun = 1.327178e11
@@ -18,7 +19,9 @@ L=3.9e26 #[W]
 T=2*pi*sqrt(a**3/muMars)
 n=sqrt(muMars/a**3) #mean motion, useful for the longitude calculations [rad/s]
 
-# Mars = m.Planet(muMars, R_m, AU, muSun) This class sets the planet into a circular orbit?
+theta_tab=np.arange(0,2*np.pi)
+flux_tab=[]
+rtab=[]
 
 def Flux(theta, l): #with clear sky #heat flux at midday
     """Find the heat flux from the sun at any point of the martian year and at any latitude
@@ -34,5 +37,10 @@ def Flux(theta, l): #with clear sky #heat flux at midday
     flux_str = L / (4*pi*(r*10**3)**2) #Now we need to adjust for latitude and axis inclination
     #tilt_eff=i_m*cos(theta)
     flux=flux_str*cos(l)
-    return flux
+    return flux, r
 
+for i, theta in enumerate(theta_tab):
+    flux_tab.append(Flux(theta,0)[0])
+    rtab.append(Flux(theta,0)[1])
+
+plt.polar(theta_tab, rtab)
