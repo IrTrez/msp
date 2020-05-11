@@ -116,7 +116,6 @@ class Body:
 
     def refreshByTimestep(self, dt, atmospheric):
         self.clock += dt
-        print(self.TimeSincePeriapsis)
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
