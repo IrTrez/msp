@@ -20,7 +20,7 @@ print("Total runtime will be:", RUNTIME, "s or:", RUNTIME/3600, "hours or:", RUN
 AU = 149.6e6  # km
 muSun = 1.327178e11
 currentTime = time.time()
-limitAltitude = 260 # 260  #[km]. At this altitude density is just below 1*10^-10
+limitAltitude = 200 # 260  #[km]. At this altitude density is just below 1*10^-10
 
 
 Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
@@ -50,7 +50,7 @@ ax.plot_surface(x, y, z, color='tab:orange')
 
 
 # PROPAGATE Here
-dt = 4
+dt = 1
 # spacecraft.AddManoeuverByDirection()
 # spacecraft.addManouvreByDirection(spacecraft.start + 1, 2, "r")
 spacecraft.addManouvreByDirection(spacecraft.start + 100, -1.332, "t")
