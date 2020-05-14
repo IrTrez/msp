@@ -100,11 +100,25 @@ class Body:
         self.omega = omega
         self.trueAnomaly = trueAnomaly
 
-        self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
-
+     # anomalies and time to Periapse
         if self.e < 1:
-            self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+            self.orbitalPeriod = 2 * pi * sqrt((self.a * self.a * self.a)/self.mu)
 
+            eccentricAnomaly = asin((sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
+            meanAnomaly = eccentricAnomaly - (self.e * sin(eccentricAnomaly))
+            n = sqrt(self.mu / (self.a * self.a * self.a))
+            tToP = -meanAnomaly / n
+            self.timeToPeriapsis = tToP if tToP > 0 else tToP + self.orbitalPeriod
+
+        elif self.e > 1:
+            # hyperbolicAnomaly = asinh((sin(self.trueAnomaly) * sqrt(self.e*self.e - 1)) / (1 + (self.e * cos(self.trueAnomaly))))
+            hyperbolicAnomaly = acosh((self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
+            meanAnomaly = self.e * sinh(hyperbolicAnomaly) - hyperbolicAnomaly
+            n = sqrt(self.mu/(- self.a * self.a * self.a))
+            self.timeToPeriapse = -meanAnomaly / n
+
+        self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
+   
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
@@ -125,8 +139,23 @@ class Body:
 
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
 
+                # anomalies and time to Periapse
         if self.e < 1:
-            self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+            self.orbitalPeriod = 2 * pi * sqrt((self.a * self.a * self.a)/self.mu)
+
+            eccentricAnomaly = asin((sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
+            meanAnomaly = eccentricAnomaly - (self.e * sin(eccentricAnomaly))
+            n = sqrt(self.mu / (self.a * self.a * self.a))
+            timeToPeriapse = -meanAnomaly / n
+            tToP = -meanAnomaly / n
+            self.timeToPeriapsis = tToP if tToP > 0 else tToP + self.orbitalPeriod
+
+        elif self.e > 1:
+            # hyperbolicAnomaly = asinh((sin(self.trueAnomaly) * sqrt(self.e*self.e - 1)) / (1 + (self.e * cos(self.trueAnomaly))))
+            hyperbolicAnomaly = acosh((self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
+            meanAnomaly = self.e * sinh(hyperbolicAnomaly) - hyperbolicAnomaly
+            n = sqrt(self.mu/(- self.a * self.a * self.a))
+            self.timeToPeriapse = -meanAnomaly / n
 
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
