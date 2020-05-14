@@ -1,10 +1,9 @@
-import numpy as np
-from tqdm import tqdm as tqdm
-import math
-from math import acos, cos, cosh, asin, sin,sinh
 import time
-from math import acos, cos, cosh, asin, sin,sinh, exp
+import numpy as np
 import pandas as pd
+from tqdm import tqdm as tqdm
+from math import acos, cos, cosh, asin, sin, sinh, exp, acosh, asinh, copysign,\
+     sqrt, pi, inf, radians
 
 
 class Atmosphere:
@@ -88,10 +87,10 @@ class Body:
             useDegrees {boolean} -- Option to init angles with degrees  (default: {False})
         """
         if useDegrees:
-            i = math.radians(i)
-            Omega = math.radians(Omega)
-            omega = math.radians(omega)
-            trueAnomaly = math.radians(trueAnomaly)
+            i = radians(i)
+            Omega = radians(Omega)
+            omega = radians(omega)
+            trueAnomaly = radians(trueAnomaly)
 
         self.a = semiMajorAxis
         self.e = eccentricity
@@ -178,11 +177,17 @@ class Body:
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
         if (altitudenorm < self.atmosphericLimitAltitude and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
-            adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
+            adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew * vnew * (vnew/vnorm)
             vnew += adrag * dt
         
-        
-        self.initPositionOrbit(rnew, self.runManoeuvre(vnew))
+        if len(self.manoeuvers) != 0:
+            for manoeuver in self.manoeuvers:
+                if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
+                    vnew += manoeuver["dv"]
+                    self.manoeuvers[manoeuver["ID"]]["r"] = self.r
+                    manoeuver["expired"] = True
+
+        self.initPositionOrbit(rnew, vnew)
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
         """Highest level function to propagate a body's orbit with time.
@@ -246,7 +251,7 @@ class Body:
         Returns:
             float -- eccentric anomaly [rad]
         """
-        if (self.meanMotion > -1 * math.pi and self.meanMotion < 0)or self.meanMotion > math.pi:
+        if (self.meanMotion > -1 * pi and self.meanMotion < 0)or self.meanMotion > pi:
             E = self.meanAnomaly - self.e
         else:
             E = self.meanAnomaly + self.e
@@ -270,16 +275,16 @@ class Body:
         """
 
         if self.e < 1.6:
-            if (self.meanMotion > -1 * math.pi and self.meanMotion < 0)or self.meanMotion > math.pi:
+            if (self.meanMotion > -1 * pi and self.meanMotion < 0)or self.meanMotion > pi:
                 H = self.meanAnomaly - self.e
             else:
                 H = self.meanAnomaly + self.e
         else:
             # lambda function to get sign
             def getSign(u): return (u > 0) - (u < 0)
-            if self.e < 3.6 and abs(self.meanAnomaly) > math.pi:
+            if self.e < 3.6 and abs(self.meanAnomaly) > pi:
                 # basically M - sign(M) * e
-                H = self.meanAnomaly - math.copysign(e, self.meanAnomaly)
+                H = self.meanAnomaly - copysign(e, self.meanAnomaly)
             else:
                 H = self.meanAnomaly/(e-1)
 
@@ -304,11 +309,11 @@ class Body:
             float, float -- c2, c3
         """
         if psi > 10e-6:
-            c2 = (1 - cos(np.sqrt(psi))) / psi
-            c3 = (math.sqrt(psi) - sin(np.sqrt(psi))) / np.sqrt(psi**3)
+            c2 = (1 - cos(sqrt(psi))) / psi
+            c3 = (sqrt(psi) - sin(sqrt(psi))) / sqrt(psi * psi * psi)
         elif psi < -10e-6:
-            c2 = (1 - cosh(np.sqrt(-psi)))/psi
-            c3 = (sinh(np.sqrt(-psi) - np.sqrt(-psi))) / np.sqrt((-psi)**3)
+            c2 = (1 - cosh(sqrt(-psi)))/psi
+            c3 = (sinh(sqrt(-psi) - sqrt(-psi))) / sqrt((-psi * psi * psi))
         else:
             c2 = 0.5
             c3 = 1./6.
@@ -331,21 +336,21 @@ class Body:
         # We call the universal parameter chi (weird greek capital X)
         vnorm = np.sqrt(v.dot(v))
         rnorm = np.sqrt(r.dot(r))
-        sqrtmu = self.mu**0.5
+        sqrtmu = sqrt(self.mu)
         rdotv = r.dot(v)
 
-        eta = ((vnorm**2) / 2) - (self.mu/rnorm)
-        alpha = ((-(vnorm**2)) / self.mu) + (2 / rnorm)
+        eta = ((vnorm * vnorm) / 2) - (self.mu/rnorm)
+        alpha = ((-(vnorm * vnorm)) / self.mu) + (2 / rnorm)
 
         if alpha > 0:
             assert (alpha != 1), "Alpha in Kepler Time is 1"
             chi = sqrtmu * dt * alpha
         elif alpha < 0:  # e>1
             alphainv = 1/alpha  # this is actually semi major axis
-            chi = (np.sign(dt) * (-alphainv)**.5 *
+            chi = (np.sign(dt) * sqrt(-alphainv) *
                       np.log((-2 * self.mu * alpha * dt) /
                              (rdotv + np.sign(dt) *
-                              np.sqrt(-self.mu / alpha) * (1 - rnorm * alpha))))
+                              sqrt(-self.mu / alpha) * (1 - rnorm * alpha))))
         else:
             print("parabola in keplerTime")
             chi = sqrtmu * dt / rnorm
@@ -358,15 +363,15 @@ class Body:
 
             rr = (chi * chi * c2) + ((rdotv/sqrtmu) * chi * (1-psi*c3)) + (rnorm * (1-psi*c2))
 
-            chi += ((np.sqrt(self.mu) * dt) - (chi*chi*chi*c3) - ((np.dot(r, v)/self.mu)*chi*chi*c2) - (rnorm*chi*(1-psi*c3)))/rr
+            chi += ((sqrtmu * dt) - (chi*chi*chi*c3) - ((np.dot(r, v)/self.mu)*chi*chi*c2) - (rnorm*chi*(1-psi*c3)))/rr
 
             if abs(chiLast-chi) < 10e-6:
                 break
 
 
         f = 1 - ((chi*chi / rnorm) * c2)
-        fdot = (np.sqrt(self.mu) / (rr * rnorm)) * chi * ((psi*c3) - 1)
-        g = dt - ((chi*chi*chi / np.sqrt(self.mu)) * c3)
+        fdot = (sqrtmu / (rr * rnorm)) * chi * ((psi*c3) - 1)
+        g = dt - ((chi*chi*chi / sqrtmu) * c3)
         gdot = 1 - ((chi*chi / rr) * c2)
 
         rnew = (f * r) + (g * v)
@@ -390,7 +395,7 @@ class Body:
         I = [1, 0, 0]
         J = [0, 1, 0]
         K = [0, 0, 1]
-        # is this the same as vnorm=np.sqrt(v[0]**2+v[1]**2)
+
         vnorm = np.sqrt(v.dot(v))
         rnorm = np.sqrt(r.dot(r))
 
@@ -400,49 +405,49 @@ class Body:
         n = np.cross(K, h)
         nnorm = np.sqrt(n.dot(n))
 
-        e = (( (vnorm**2-self.mu/rnorm) * r) - (np.dot(r, v) * v)) / (self.mu)  # is a vector
+        e = (( ((vnorm * vnorm)-self.mu/rnorm) * r) - (np.dot(r, v) * v)) / (self.mu)  # is a vector
         enorm = np.sqrt(e.dot(e))
 
-        eta = ((vnorm**2/2) - (self.mu/rnorm))
+        eta = (((vnorm * vnorm)/2) - (self.mu/rnorm))
 
         if enorm != 1.0:
             a = -self.mu / (2 * eta)
-            p = a * (1 - enorm**2)
+            p = a * (1 - enorm*enorm)
         else:
-            p = hnorm**2 / self.mu
-            a = math.inf
+            p = hnorm*hnorm / self.mu
+            a = inf
 
         i = acos(h[2]/hnorm)
 
         # acos should work here instead of np.arccos since Omega should not be an array
         Omega = acos(n[0]/nnorm)
         if n[1] < 0:
-            Omega = 2*math.pi-Omega
+            Omega = 2*pi-Omega
 
         omega = acos(np.dot(n, e)/(nnorm*enorm))
         if e[2] < 0:
-            omega = 2*math.pi-omega
+            omega = 2*pi-omega
 
         # nu=greek "v" used for poisson ratio
         trueAnomaly = acos(np.dot(e, r)/(enorm*rnorm))
         if np.dot(r, v) < 0:
-            trueAnomaly = 2*math.pi-trueAnomaly
+            trueAnomaly = 2*pi-trueAnomaly
         
         omega_true, lambda_true, u = None, None, None
         if enorm < 1 and i == 0:
             omega_true = acos(e[1]/enorm)
             if e[1] < 0:
-                omega_true = 2*math.pi-omega_true
+                omega_true = 2*pi-omega_true
         
         elif enorm == 0 and i != 0:
             u = acos(np.dot(n, r)/(nnorm*rnorm))
             if r[2] < 0:
-                u = 2*math.pi-u
+                u = 2*pi-u
 
         elif enorm == 0 and i == 0:
             lambda_true = acos(r[0]/rnorm)
             if r[1] < 0:
-                lambda_true = 2*math.pi-lambda_true
+                lambda_true = 2*pi-lambda_true
 
         return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
 
@@ -472,15 +477,15 @@ class Body:
         # Semi latus rectum this is different from source material where p is taken as input:
         # when a p is also given it uses p instead of a for calculations
         if p is None:
-            p = a * (1 - e**2)
+            p = a * (1 - e*e)
 
 
         rpqw = np.array([((p * cos(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
                          ((p * sin(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
                          0])
 
-        vpqw = np.array([-1 * np.sqrt(self.mu/p) * sin(trueAnomaly),
-                         np.sqrt(self.mu/p) * (e + cos(trueAnomaly)),
+        vpqw = np.array([-1 * sqrt(self.mu/p) * sin(trueAnomaly),
+                         sqrt(self.mu/p) * (e + cos(trueAnomaly)),
                          0])
 
         PQWtoIJKtransform = np.array([[cos(Omega) * cos(omega) - sin(Omega) * sin(omega) * cos(i), -cos(Omega) * sin(omega) - sin(Omega) * cos(omega) * cos(i), sin(Omega) * sin(i)],
@@ -503,28 +508,10 @@ class Body:
 
     #     self.ap = 0.5 * (self.apoapsis+self.periapsis+self.atmosphericLimitAltitude)
 
-    #     self.POdv = abs(math.sqrt(self.mu*(2/self.apoapsis-1/self.a))-math.sqrt(self.mu*(2/self.apoapsis-1/self.ap)))
+    #     self.POdv = abs(sqrt(self.mu*(2/self.apoapsis-1/self.a))-sqrt(self.mu*(2/self.apoapsis-1/self.ap)))
     #     self.POdv = (self.v/np.sqrt(self.v.dot(self.v)))*self.POdv
 
     #     return self.POdv
-
-
-    def runManoeuvre(self,v):
-        """Add deltaV if the current clock matches a manoeuvre's clock
-
-        Arguments:
-            v {numpy.ndarray} -- the Body's velocity vector
-
-        Returns:
-            numpy.ndarray -- the Body's velocity vector with added manoeuvre velocity
-        """
-        if len(self.manoeuvers) != 0:
-            for manoeuver in self.manoeuvers:
-                if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
-                    v += manoeuver["dv"]
-                    self.manoeuvers[manoeuver["ID"]]["r"] = self.r
-                    manoeuver["expired"] = True
-        return v
 
 
     def addManoeuverByVector(self, clock, dv):
