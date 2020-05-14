@@ -180,7 +180,8 @@ class Body:
             adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew * vnew * (vnew/vnorm)
             vnew += adrag * dt
         
-        if len(self.manoeuvers) != 0:
+        # Add manoeuvre delta V
+        if len(self.manoeuvers) != 0 and any(not x["expired"] for x in self.manoeuvers):
             for manoeuver in self.manoeuvers:
                 if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
                     vnew += manoeuver["dv"]
@@ -568,5 +569,4 @@ class Body:
                 np.sqrt(directionNormal.dot(directionNormal))
             dv = dvMagnitude * direction
 
-        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
-            dv/np.sqrt(dv.dot(dv))), "manType": manType})
+        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (dv/np.sqrt(dv.dot(dv))), "manType": manType})

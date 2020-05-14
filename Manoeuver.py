@@ -97,6 +97,7 @@ for u in tqdm(range(len(x))):
             if manoeuver["manType"] == "g":
                 manMarker = "+"
                 manColor = "r"
+            print(manoeuver["r"])
             manoeuverPos = manoeuver["r"][1:-1].split(" ")
             manoeuverPos = [float(x) for x in manoeuverPos if x]
             ax.scatter(*manoeuverPos, marker = manMarker, color = manColor)

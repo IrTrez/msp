@@ -11,8 +11,8 @@ plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/Aerobraking.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 2000  # __ times speed
-RUNTIME = 3000000
+SPEED = 300  # __ times speed
+RUNTIME = 10000
 print("Total runtime will be:", RUNTIME, "s or:", RUNTIME/3600, "hours or:", RUNTIME/86400, "days")
 
 # USE km AS STANDARD DISTANCE UNIT
