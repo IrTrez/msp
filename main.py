@@ -4,7 +4,6 @@ import math
 from math import acos, cos, cosh, asin, sin,sinh
 import time
 from math import acos, cos, cosh, asin, sin,sinh, exp
-# import matplotlib.pyplot as plt #uncomment when visualisation has been implemented
 import pandas as pd
 
 
@@ -14,11 +13,8 @@ class Atmosphere:
         assert not (densityFunction is not None and densityFile is not None), "Only one input method of atmosphere can be given"
         assert not (densityFunction is None and densityFile is None), "Multiple methods of atmosphere are given"
         if densityFunction is not None:
-            # return the function
-            # or
             # create dictionary with density per meter altitude. density in kg/m^3 altitude in km
-            print("DensityFunction is temporarily deprecated, use densityFile instead")
-            self.densityFunction = densityFunction
+            raise DeprecationWarning("DensityFunction is temporarily deprecated, use densityFile instead")
         if densityFile is not None:
             density = pd.read_csv(densityFile)
             density.iloc[:, 0] = density.iloc[:, 0].apply(round,args=[3])
@@ -28,7 +24,7 @@ class Atmosphere:
 
 
 class Planet:
-    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere:Atmosphere="false"):
+    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere:Atmosphere=False):
         self.mu = gravitationalParameter
         self.muParent = parentGravitationalParameter
         self.r = radius
@@ -46,34 +42,56 @@ class Planet:
 
 class Body:
     def __init__(self, parentBody, mass, DragCoeff=0, surfaceArea=0):
+        # Parentbody variables
         self.mu = parentBody.mu
         self.parentRadius = parentBody.r
-        self.m = mass
-        self.CD = DragCoeff
-        self.surfaceArea = surfaceArea
-        self.clock = time.time()
-        self.start = self.clock
         self.parentRSOI = parentBody.rsoi
-        self.manoeuvers = []
-        self.PeriapsisToApoapsis = True
-        self.ApoapsisToPeriapsis = False
         if parentBody.atmosphere != False:
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
             self.densityDict = parentBody.densityDict
 
+        # Body variables
+        self.m = mass
+        self.CD = DragCoeff
+        self.surfaceArea = surfaceArea
+
+        # System variables
+        self.clock = time.time()
+        self.start = self.clock
+        self.manoeuvers = []
+
+
     def getDensity(self, altitude):
+        """Pulls density from self.densityDict
+
+        Arguments:
+            altitude {float} -- altitude
+
+        Returns:
+            float -- Atmospheric density in kg/m^3
+        """
         return self.densityDict[round(altitude,3)]
 
 
     def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
+        """Set up or refresh an orbit's parameters using keplerian elements
         
+        Arguments:
+            semiMajorAxis {float} -- Semi-Major axis [km]
+            eccentricity {float} -- eccentricity
+            inclination {float} -- inclination [rad]
+            Omega {float} -- Big omega [rad]
+            omega {float} -- argument of periapse [rad]
+        
+        Keyword Arguments:
+            trueAnomaly {float} -- True Anomaly [rad] (default: {0})
+            useDegrees {boolean} -- Option to init angles with degrees  (default: {False})
         """
         if useDegrees:
             i = math.radians(i)
             Omega = math.radians(Omega)
             omega = math.radians(omega)
             trueAnomaly = math.radians(trueAnomaly)
-        """
 
         self.a = semiMajorAxis
         self.e = eccentricity
@@ -83,8 +101,10 @@ class Body:
         self.trueAnomaly = trueAnomaly
 
         self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
+
         if self.e < 1:
             self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
@@ -92,9 +112,8 @@ class Body:
         self.dt = 1 # default global timestep
 
 
-        # self.tp = timeSincePeriapse
     def initPositionOrbit(self, r, v):
-        """Set up an orbit using carthesian position and velocity vectors
+        """Set up or refresh an orbit using carthesian position and velocity vectors
         
         Arguments:
             r {numpy.ndarray} -- carthesian position vector
@@ -105,8 +124,10 @@ class Body:
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
 
         self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
+
         if self.e < 1:
             self.orbitalPeriod = 2 * math.pi * math.sqrt(self.a**3/self.mu)
+
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
@@ -115,39 +136,59 @@ class Body:
 
 
     def refreshByTimestep(self, dt, atmospheric):
+        """Medium level function to refresh the elements of an orbit. \n
+        Adds any acceleration and pertubation effects
+
+        Arguments:\n
+            dt {float} -- Time step
+            atmospheric {bool} -- If the prerequisite parentbody parameters are available perform atmospheric deceleration
+        """
         self.clock += dt
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
         self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
         if (altitudenorm < self.atmosphericLimitAltitude and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
-
             adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew**2 * (vnew/vnorm)
             vnew += adrag * dt
         
         
-        self.initPositionOrbit(rnew, self.Manoeuvers(vnew))
+        self.initPositionOrbit(rnew, self.runManoeuvre(vnew))
 
     def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
+        """Highest level function to propagate a body's orbit with time.
+
+        Arguments:
+            timeJump {int} -- The total time in seconds to propage a spacecraft's orbit
+
+        Keyword Arguments:
+            saveFile {string} -- path for CSV savefile, if None: no save is made (default: {None})
+            atmospheric {bool} -- Indicate if atmospheric effects should be accounted for (default: {False})
+            dtAtmospheric {int} -- atmospheric dt (default: {1})
+            dtNormal {int} -- non atmospheric dt (default: {1})
+
+        """
         rlist = []
         clocklist = []
         for deltat in tqdm(range((int(timeJump / abs(dtAtmospheric))) + 1)):
+            # sphere of influence check
             if np.sqrt(self.r.dot(self.r)) + 1000 > self.parentRSOI:
-                # sphere of influence check
                 print("Body has left sphere of influence")
                 print("Radius: ", self.r)
                 print("Velocity: ", self.v)
                 break
+            # Check if body has crashed
             if self.parentRadius > np.sqrt(self.r.dot(self.r)):
-                # Check if body has crashed
                 print("Body crashed into surface")
                 print("Ending propagation")
                 # print("Simulation ran for: " + str(time.time() - self.start))
                 print("Radius:", np.sqrt(self.r.dot(self.r)), ":", self.r)
                 print("Altitude:", self.altitude.dot(self.altitude))
                 break
-            #plus 500 is a safety margin as it's takeing the previous altitude
-            if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 500: 
+            
+            # Use refreshByTimestep depending on wheter the body is in atmosphere
+            # plus 200 is a safety margin as it's takeing the previous altitude
+            if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 200: 
                 self.refreshByTimestep(dtAtmospheric , atmospheric)
                 rlist.append(self.r)
                 clocklist.append(self.clock)
@@ -155,40 +196,21 @@ class Body:
                 self.refreshByTimestep(dtNormal, atmospheric)
                 rlist.append(self.r)
                 clocklist.append(self.clock)
+
+        # Save File in CSV form if path is given
         if saveFile is not None:
+            # Save position data
             rlist = np.array(rlist).T
             data = pd.DataFrame({"clock":clocklist, "x":rlist[0], "y":rlist[1], "z":rlist[2]})
             data.to_csv(saveFile, sep=",")
 
+            # Save Manoeuvre data
             manoeuvreSavefile = saveFile[:-4] + "_man" + ".csv"
             manoeuvreData = pd.DataFrame(self.manoeuvers)
             manoeuvreData.to_csv(manoeuvreSavefile)
-        return rlist
 
 
-    # def refreshKeplerOrbit(self, t):
-    #     # might be deprecated
-    #     print("refreshKeplerOrbit is deprecated")
-    #     self.meanMotion = (self.mu/(self.a**3))
-    #     self.meanAnomaly = self.meanMotion * (t - self.tp)
-    #     if self.e == 1:
-    #         print("Something crazy has happened")
-    #         e = 1 + 10e-10  # ;)
-    #     # True anomaly, normally theta now v
-    #     if self.e < 1:
-    #         E = self.findEccentricAnomaly()
-    #         self.trueAnomaly = acos(
-    #             (cos(E) - self.e) / (1 - e*cos(E)))
-    #         self.fpa = asin((self.e*sin(E)) /
-    #                              math.sqrt(1 - (self.e)**2 * (cos(E))**2))
-    #     else:
-    #         H = self.findHyperbolicAnomaly()
-    #         self.trueAnomaly = acos(
-    #             (cosh(H) - self.e) / (1 - self.e*cosh(H)))
-    #         self.fpa = math.sqrt(((self.e)**2 - 1) /
-    #                              ((self.e)**2 * (cosh(H))**2) - 1)
-
-
+    # Vallado ed. 4 Algorithmn 2 page 65
     def findEccentricAnomaly(self):
         """Find eccentric anomaly taking the body's current keplerian values
         
@@ -210,6 +232,7 @@ class Body:
         return E
 
 
+    # Vallado ed. 4 Algorithmn 4 page 71
     def findHyperbolicAnomaly(self):
         """Find hyperbolic anomaly taking the body's current keplerian values
         
@@ -241,7 +264,7 @@ class Body:
         return H
 
 
-    # Vallado Algorithm 1 page 63
+    # Vallado ed. 4 Algorithmn 1 page 63
     def c2_c3(self, psi):
         """Obtain c2 and c3 values used for the universal solution method of kepler's problem
         
@@ -263,7 +286,7 @@ class Body:
         return c2, c3
 
 
-    # Vallado algorithm 8 page 93 change of positions with time
+    # Vallado ed. 4 Algorithmn 8 page 93: change of positions with time
     def keplerTime(self, r, v, dt):
         """Returns new velocity and position vectors with change over time
         
@@ -324,7 +347,7 @@ class Body:
         return rnew, vnew
 
 
-    # Vallado algorithm 9
+    # Vallado ed. 4 Algorithm 9 page 113
     def RVtoCOE(self, r, v):
         """Converts carthesian position and velocity vectors to keplerian elements
         
@@ -395,8 +418,8 @@ class Body:
         return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
 
 
-    # Vallado algorithm 10
-    def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None, p = None):
+    # Vallado ed. 4 Algorithmn 10 page 118
+    def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None, p=None):
         """Takes in keplerian elements and outputs carthesian position and velocity vectors
         
         Arguments:
@@ -422,22 +445,6 @@ class Body:
         if p is None:
             p = a * (1 - e**2)
 
-        # # circular equatorial
-        # if e < 1 and i == 0:
-        #     assert (lambda_true is not None), "Lambda_True is not given"
-        #     omega, Omega = 0.0, 0.0
-        
-        # # circular inclined
-        # elif e == 0 and i != 0:
-        #     assert (u is not None), "u is not given"
-        #     omega = 0.0
-        #     trueAnomaly = u
-
-        # # elliptical equatorial
-        # elif e == 0 and i == 0:
-        #     assert (u is not None), "omega_true is not given"
-        #     Omega = 0.0
-        #     omega = omega_true
 
         rpqw = np.array([((p * cos(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
                          ((p * sin(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
@@ -448,66 +455,40 @@ class Body:
                          0])
 
         PQWtoIJKtransform = np.array([[cos(Omega) * cos(omega) - sin(Omega) * sin(omega) * cos(i), -cos(Omega) * sin(omega) - sin(Omega) * cos(omega) * cos(i), sin(Omega) * sin(i)],
-                                        [sin(Omega) * cos(omega) + cos(Omega) * sin(omega) * cos(i), -sin(Omega) * sin(omega) + cos(Omega) * cos(omega) * cos(i), -cos(Omega) * sin(i)],
-                                        [sin(omega) * sin(i), cos(omega) * sin(i), cos(i)]])
+                                      [sin(Omega) * cos(omega) + cos(Omega) * sin(omega) * cos(i), -sin(Omega) * sin(omega) + cos(Omega) * cos(omega) * cos(i), -cos(Omega) * sin(i)],
+                                      [sin(omega) * sin(i), cos(omega) * sin(i), cos(i)]])
 
         rijk = np.matmul(PQWtoIJKtransform, rpqw)
         vijk = np.matmul(PQWtoIJKtransform, vpqw)
         return rijk, vijk
 
 
-    def ApoapsisCheck(self):
-        """
-        Returns:
-            True/False statment depending on position of space-craft
-        """
+    # def ParkingOrbit(self):
+    #     '''
 
-        self.checkA = False
+    #         ap {float} -- semi major axis for parking orbit [km]
 
-        if self.findEccentricAnomaly()==180:
-            self.checkA = True
+    #     Returns:
+    #         POdv {ndarray} -- Carthesian velocity vector for transfer at apoapsis to parking orbit
+    #     '''
 
-        return self.checkA
+    #     self.ap = 0.5 * (self.apoapsis+self.periapsis+self.atmosphericLimitAltitude)
 
+    #     self.POdv = abs(math.sqrt(self.mu*(2/self.apoapsis-1/self.a))-math.sqrt(self.mu*(2/self.apoapsis-1/self.ap)))
+    #     self.POdv = (self.v/np.sqrt(self.v.dot(self.v)))*self.POdv
 
-    def PeriapsisCheck(self):
-        """
-        Returns:
-            True/False statment depending on position of space-craft
-        """
-
-        self.checkP = False
-
-        if self.findEccentricAnomaly()==0 or self.findHyperbolicAnomaly()==0:
-            self.checkP = True
-
-        return self.checkP
+    #     return self.POdv
 
 
-    def ParkingOrbit(self):
-        '''
+    def runManoeuvre(self,v):
+        """Add deltaV if the current clock matches a manoeuvre's clock
 
-            ap {float} -- semi major axis for parking orbit [km]
+        Arguments:
+            v {numpy.ndarray} -- the Body's velocity vector
 
         Returns:
-            POdv {ndarray} -- Carthesian velocity vector for transfer at apoapsis to parking orbit
-        '''
-
-        self.ap = 0.5 * (self.apoapsis+self.periapsis+self.atmosphericLimitAltitude)
-
-        self.POdv = abs(math.sqrt(self.mu*(2/self.apoapsis-1/self.a))-math.sqrt(self.mu*(2/self.apoapsis-1/self.ap)))
-        self.POdv = (self.v/np.sqrt(self.v.dot(self.v)))*self.POdv
-
-        return self.POdv
-
-
-    def Manoeuvers(self,v):
-        '''
-
-        parameter:
-            v (ndarray) -- vnew, the most recent calculations for current velocity in cartesian coordinates
-
-        '''
+            numpy.ndarray -- the Body's velocity vector with added manoeuvre velocity
+        """
         if len(self.manoeuvers) != 0:
             for manoeuver in self.manoeuvers:
                 if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
@@ -533,13 +514,14 @@ class Body:
         self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
             dv/np.sqrt(dv.dot(dv))), "manType": "g"})
 
+
     def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType):
-        """[summary]
+        """Adds a magnitudal manoeuvre to the manoeuvrelist.
 
         Arguments:
-            time {float} -- time
-            dv {float} -- normal value of deltav
-            type {string} -- type(tangential, radial and normal) or (t,r,n)
+            clock {float} -- clock to perform manoeuvre
+            dvMagnitude {float} -- normal value of deltav
+            manoeuvreType {string} -- manoeuvre type (tangential, radial and normal) or (t,r,n)
         """
         manoeuvreTypes = ["tangential", "t", "radial", "r", "normal", "n"]
         assert (manoeuvreType in manoeuvreTypes), "Incorrect manouvreType, use tangential, t, radial, r, normal or n"
@@ -553,20 +535,21 @@ class Body:
         # Create dv vector based on manoeuvretype and dvMagnitude
         if (manoeuvreType == "tangential" or manoeuvreType == "t"):
             manType = "t"
-            direction = self.v/np.sqrt(self.v.dot(self.v))
+            direction = self.v / np.sqrt(self.v.dot(self.v))
             dv = dvMagnitude * direction
 
         if (manoeuvreType == "radial" or manoeuvreType == "r"):
             manType = "r"
-            direction = -self.r/np.sqrt(self.r.dot(self.r))
+            direction = -self.r / np.sqrt(self.r.dot(self.r))
             dv = dvMagnitude * direction
 
         if (manoeuvreType == "normal" or manoeuvreType == "n"):
             manType = "n"
-            directionTangential = self.v/np.sqrt(self.v.dot(self.v))
-            directionRadial = -self.r/np.sqrt(self.r.dot(self.r))
-            directionNormal = np.cross(directionTangential,directionRadial)
-            direction = directionNormal/np.sqrt(directionNormal.dot(directionNormal))
+            directionTangential = self.v / np.sqrt(self.v.dot(self.v))
+            directionRadial = -self.r / np.sqrt(self.r.dot(self.r))
+            directionNormal = np.cross(directionTangential, directionRadial)
+            direction = directionNormal / \
+                np.sqrt(directionNormal.dot(directionNormal))
             dv = dvMagnitude * direction
 
         self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
