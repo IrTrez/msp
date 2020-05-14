@@ -13,7 +13,7 @@ plt.style.use('dark_background')
 
 # INPUT
 DATAFILE = "runs/Aerobraking.csv"
-SPEED = 500 # __ times speed
+SPEED = 1000 # __ times speed
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -24,7 +24,7 @@ Mars = m.Planet(4.282837e4, 3396.2, 1.52367934 * AU, muSun, False)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.set_aspect('equal')
+# ax.set_aspect('equal')
 
 # Sphere:
 u = np.linspace(0, 2 * np.pi, 100)
@@ -36,7 +36,7 @@ z = Mars.r * np.outer(np.ones(np.size(u)), np.cos(v))
 ax.plot_surface(x, y, z, color='tab:orange')
 
 
-line, = ax.plot([], [], lw=2)
+line, = ax.plot([], [], lw=1)
 scatt, = ax.plot([], [], linestyle="", marker="o", color="white")
 
 ax.set_ylim(-40000, 40000)
@@ -50,7 +50,8 @@ data = pd.read_csv(DATAFILE, index_col=0).loc[:, ["x", "y", "z"]]
 clock = pd.read_csv(DATAFILE, index_col=0).loc[:, ["clock"]]
 if manoeuvreFileAvailable:
     manoeuvreData = pd.read_csv(
-    (DATAFILE[:-4] + "_man.csv"), index_col="ID").loc[:, ["ID", "clock", "r"]]
+        (DATAFILE[:-4] + "_man.csv"), usecols=["ID", "clock", "r"])
+
 
 print(len(data))
 
@@ -97,11 +98,11 @@ def animate(i):
     return title, line, scatt,
 
 
-anim = FuncAnimation(fig, animate, frames= steps, interval=10, blit=True)
+anim = FuncAnimation(fig, animate, frames= steps, interval=1, blit=True)
 
 fullSaveName = "animations/" + savename + ".mp4"
 print("Saving to " + fullSaveName)
-anim.save(fullSaveName, fps=30, extra_args=['-vcodec', 'libx264'],dpi=300)
+anim.save(fullSaveName, fps=120, extra_args=['-vcodec', 'libx264'],dpi=200)
 # plot the orbit
 # ax.plot(rlist[0], rlist[1], rlist[2], color="g")
 

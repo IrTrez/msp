@@ -11,7 +11,7 @@ plt.style.use('seaborn-pastel')
 
 DATAFILE = "runs/Aerobraking.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
-SPEED = 500  # __ times speed
+SPEED = 2000  # __ times speed
 RUNTIME = 3000000
 print("Total runtime will be:", RUNTIME, "s or:", RUNTIME/3600, "hours or:", RUNTIME/86400, "days")
 
