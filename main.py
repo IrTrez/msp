@@ -106,15 +106,15 @@ class Body:
             eccentricAnomaly = asin((sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
             meanAnomaly = eccentricAnomaly - (self.e * sin(eccentricAnomaly))
             n = sqrt(self.mu / (self.a * self.a * self.a))
-            tToP = -meanAnomaly / n
-            self.timeToPeriapsis = tToP if tToP > 0 else tToP + self.orbitalPeriod
+            self.timeToPeriapsis = meanAnomaly / n
+            self.timeToApoapsis = pi - meanAnomaly / n
 
         elif self.e > 1:
             # hyperbolicAnomaly = asinh((sin(self.trueAnomaly) * sqrt(self.e*self.e - 1)) / (1 + (self.e * cos(self.trueAnomaly))))
             hyperbolicAnomaly = acosh((self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
             meanAnomaly = self.e * sinh(hyperbolicAnomaly) - hyperbolicAnomaly
             n = sqrt(self.mu/(- self.a * self.a * self.a))
-            self.timeToPeriapse = -meanAnomaly / n
+            self.timeToPeriapsis = -meanAnomaly / n
 
         self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
    
@@ -145,16 +145,15 @@ class Body:
             eccentricAnomaly = asin((sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
             meanAnomaly = eccentricAnomaly - (self.e * sin(eccentricAnomaly))
             n = sqrt(self.mu / (self.a * self.a * self.a))
-            timeToPeriapse = -meanAnomaly / n
-            tToP = -meanAnomaly / n
-            self.timeToPeriapsis = tToP if tToP > 0 else tToP + self.orbitalPeriod
+            self.timeToPeriapsis = meanAnomaly / n
+            self.timeToApoapsis = pi - meanAnomaly / n
 
         elif self.e > 1:
             # hyperbolicAnomaly = asinh((sin(self.trueAnomaly) * sqrt(self.e*self.e - 1)) / (1 + (self.e * cos(self.trueAnomaly))))
             hyperbolicAnomaly = acosh((self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
             meanAnomaly = self.e * sinh(hyperbolicAnomaly) - hyperbolicAnomaly
             n = sqrt(self.mu/(- self.a * self.a * self.a))
-            self.timeToPeriapse = -meanAnomaly / n
+            self.timeToPeriapsis = -meanAnomaly / n
 
         self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
@@ -182,11 +181,63 @@ class Body:
         
         # Add manoeuvre delta V
         if len(self.manoeuvers) != 0 and any(not x["expired"] for x in self.manoeuvers):
+            Adistancer = 0
+            Pdistancer = 0
             for manoeuver in self.manoeuvers:
-                if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
-                    vnew += manoeuver["dv"]
-                    self.manoeuvers[manoeuver["ID"]]["r"] = self.r
-                    manoeuver["expired"] = True
+                # this is so that it doesnt propagate multiple manouevres close to ap/peri
+                manoeuver["iterSinceCreation"] += 1
+                
+                rnorm = np.sqrt(rnew.dot(rnew))
+                atPeriapsis = (abs(self.periapsis-rnorm) < 0.001)
+                atApoapsis = (abs(self.apoapsis-rnorm) < 0.001)
+
+                if (isinstance(manoeuver["clock"], str)) and (self.clock-self.start > 2) and (atApoapsis or atPeriapsis):
+                    if (manoeuver["clock"][0] in ["p", "a"]) and (manoeuver["expired"] == False) and (manoeuver["iterSinceCreation"] > 10):
+                        location = manoeuver["clock"][0]
+                        orbit = int(manoeuver["clock"][1:])
+                        
+                        # This is to make sure it only propagates the manoeuver once at peri/apoapsis
+                        if Adistancer > 0:
+                            Adistancer -= 1
+                            continue
+                        if Pdistancer > 0:
+                            Pdistancer -= 1
+                            continue
+
+                        if atPeriapsis:
+                            Pdistancer = 10
+                        if atPeriapsis:
+                            Adistancer = 10
+
+                        if location == "p" and atPeriapsis:
+                            # print(manoeuver)
+                            if orbit == 0:
+                                dvMag = np.sqrt(manoeuver["dv"].dot(manoeuver["dv"]))
+                                self.manoeuvers.remove(manoeuver)
+                                self.addManouvreByDirection(self.clock, dvMag, manoeuver["manType"], 0)
+                            else:
+                                orbit -= 1
+                                manoeuver["clock"] = location + str(orbit)
+                                manoeuver["iterSinceCreation"] = 0
+
+                        elif location == "a" and atApoapsis:
+                            # print(manoeuver)
+                            if orbit == 0:
+                                dvMag = np.sqrt(manoeuver["dv"].dot(manoeuver["dv"]))
+                                self.manoeuvers.remove(manoeuver)
+                                self.addManouvreByDirection(self.clock, dvMag, manoeuver["manType"], 0)
+                            else:
+                                orbit -= 1
+                                manoeuver["clock"] = location + str(orbit)
+                                manoeuver["iterSinceCreation"] = 0 
+                    else:
+                        assert (manoeuver["clock"][0] in ["p", "a"]), "Only p and a supported."
+
+                elif isinstance(manoeuver["clock"], int) or isinstance(manoeuver["clock"], float):
+                    if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
+                        vnew += manoeuver["dv"]
+                        manoeuver["r"] = self.r
+                        manoeuver["expired"] = True
 
         self.initPositionOrbit(rnew, vnew)
 
@@ -252,15 +303,16 @@ class Body:
         Returns:
             float -- eccentric anomaly [rad]
         """
-        if (self.meanMotion > -1 * pi and self.meanMotion < 0)or self.meanMotion > pi:
-            E = self.meanAnomaly - self.e
+        n = sqrt(self.mu / (self.a * self.a * self.a))
+        if (n > -1 * pi and n < 0)or n > pi:
+            E = n - self.e
         else:
-            E = self.meanAnomaly + self.e
+            E = n + self.e
 
         tolerance = 10e-10
         while True:
             lastE = E
-            E += (self.meanAnomaly - E + (self.e*sin(E))) / \
+            E += (n - E + (self.e*sin(E))) / \
                 (1 - (self.e * cos(E)))
             if abs(lastE - E) < tolerance:
                 break
@@ -514,8 +566,7 @@ class Body:
 
     #     return self.POdv
 
-
-    def addManoeuverByVector(self, clock, dv):
+    def addManoeuverByVector(self, clock, dv, iterSinceCreation=11):
         '''
 
             clock (float) -- clock of manoeuvers
@@ -529,10 +580,10 @@ class Body:
             latestID = len(self.manoeuvers)
 
         self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
-            dv/np.sqrt(dv.dot(dv))), "manType": "g"})
+            dv/np.sqrt(dv.dot(dv))), "manType": "g", "iterSinceCreation": iterSinceCreation})
 
 
-    def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType):
+    def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType, iterSinceCreation=11):
         """Adds a magnitudal manoeuvre to the manoeuvrelist.
 
         Arguments:
@@ -569,4 +620,5 @@ class Body:
                 np.sqrt(directionNormal.dot(directionNormal))
             dv = dvMagnitude * direction
 
-        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (dv/np.sqrt(dv.dot(dv))), "manType": manType})
+        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
+            dv/np.sqrt(dv.dot(dv))), "manType": manType, "iterSinceCreation": iterSinceCreation})
