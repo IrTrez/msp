@@ -296,61 +296,6 @@ class Body:
             manoeuvreData.to_csv(manoeuvreSavefile)
 
 
-    # Vallado ed. 4 Algorithmn 2 page 65
-    def findEccentricAnomaly(self):
-        """Find eccentric anomaly taking the body's current keplerian values
-        
-        Returns:
-            float -- eccentric anomaly [rad]
-        """
-        n = sqrt(self.mu / (self.a * self.a * self.a))
-        if (n > -1 * pi and n < 0)or n > pi:
-            E = n - self.e
-        else:
-            E = n + self.e
-
-        tolerance = 10e-10
-        while True:
-            lastE = E
-            E += (n - E + (self.e*sin(E))) / \
-                (1 - (self.e * cos(E)))
-            if abs(lastE - E) < tolerance:
-                break
-        return E
-
-
-    # Vallado ed. 4 Algorithmn 4 page 71
-    def findHyperbolicAnomaly(self):
-        """Find hyperbolic anomaly taking the body's current keplerian values
-        
-        Returns:
-            float -- hyperbolic anomaly [rad]
-        """
-
-        if self.e < 1.6:
-            if (self.meanMotion > -1 * pi and self.meanMotion < 0)or self.meanMotion > pi:
-                H = self.meanAnomaly - self.e
-            else:
-                H = self.meanAnomaly + self.e
-        else:
-            # lambda function to get sign
-            def getSign(u): return (u > 0) - (u < 0)
-            if self.e < 3.6 and abs(self.meanAnomaly) > pi:
-                # basically M - sign(M) * e
-                H = self.meanAnomaly - copysign(e, self.meanAnomaly)
-            else:
-                H = self.meanAnomaly/(e-1)
-
-        tolerance = 10e-10
-        while True:
-            lastE = H
-            H += (H + self.meanAnomaly - (self.e*sinh(H))) / \
-                ((self.e * cos(H) - 1))
-            if abs(lastE - H) < tolerance:
-                break
-        return H
-
-
     # Vallado ed. 4 Algorithmn 1 page 63
     def c2_c3(self, psi):
         """Obtain c2 and c3 values used for the universal solution method of kepler's problem
