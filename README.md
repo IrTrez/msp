@@ -10,9 +10,7 @@ Team Tumbleweed bus aerobraking calculations
 
 `pip install matplotlib`
 
-For creating matplotlib animations you need [ffmpeg](https://www.wikihow.com/Install-FFmpeg-on-Windows)
-
-### Extra
-In the future we might use:
-
 `pip install pandas`
+
+
+For creating matplotlib animations you need [ffmpeg](https://www.wikihow.com/Install-FFmpeg-on-Windows)
