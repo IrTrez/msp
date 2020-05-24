@@ -1,13 +1,9 @@
-from mpl_toolkits.mplot3d import Axes3D
 import main as m
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
+import simtools
 import time
 from tqdm import tqdm
 import math
-from math import exp
-plt.style.use('seaborn-pastel')
+import numpy as np
 
 DATAFILE = "runs/Aerobraking.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
@@ -57,61 +53,11 @@ spacecraft.addManouvreByDirection(spacecraft.start + 100, -1.332, "t")
 spacecraft.addManouvreByDirection(spacecraft.start + 8900, -1.1, "t")
 
 rlist = spacecraft.propagate(RUNTIME, DATAFILE, True, dtAtmospheric = dt, dtNormal = dt)
-# print("Absolute distance:", np.sqrt(spacecraft.r.dot(spacecraft.r)))
-# print("Sphere of influence:", Mars.rsoi)
-# print(spacecraft.r)
+
 print(np.sqrt(spacecraft.v.dot(spacecraft.v)))
 print(spacecraft.e)
 print(spacecraft.periapsis)
 print("Periaosis alt", spacecraft.periapsis-Mars.r)
 print("Apoapsis alt", spacecraft.apoapsis-Mars.r)
 
-
-
-ax.set_ylim(-50000, 50000)
-ax.set_xlim(-50000, 50000)
-ax.set_zlim(-50000, 50000)
-
-
-data = pd.read_csv(DATAFILE, index_col=0)
-droppedPoints = []
-for u in range(len(data)):
-    if u % SPEED != 0:
-        droppedPoints.append(u)
-
-data = data.drop(droppedPoints, axis=0)
-clock = data.loc[:, "clock"].to_numpy()
-x = data.loc[:, "x"].to_numpy()
-y = data.loc[:, "y"].to_numpy()
-z = data.loc[:, "z"].to_numpy()
-
-manoeuvreData = pd.read_csv(
-    (DATAFILE[:-4] + "_man.csv"), index_col="ID").loc[:, ["clock", "manType", "r"]]
-
-# print(rlist)
-plt.pause(1)
-for u in tqdm(range(len(x))):
-    currentClock = clock[u]
-    ax.plot(x[0:u], y[0:u], z[0:u], color="g")
-    for i, manoeuver in manoeuvreData.iterrows():
-        if manoeuver["clock"] > currentClock and manoeuver["clock"] < currentClock+SPEED:
-            if manoeuver["manType"] == "t":
-                manMarker = "o"
-                manColor = "lime"
-            if manoeuver["manType"] == "r":
-                manMarker = "o"
-                manColor = "cyan"
-            if manoeuver["manType"] == "n":
-                manMarker = "^"
-                manColor = "m"
-            # general manoeuvre
-            if manoeuver["manType"] == "g":
-                manMarker = "+"
-                manColor = "r"
-            manoeuverPos = manoeuver["r"][1:-1].split(" ")
-            manoeuverPos = [float(x) for x in manoeuverPos if x]
-            ax.scatter(*manoeuverPos, marker=manMarker, color=manColor)
-    # ax.quiver(*parentradiuslist[u], *hlist[u], color="red")
-    plt.pause(0.000000001)
-    plt.clf
-plt.pause(5)
+simtools.quickAnimate(SPEED,DATAFILE,Mars)
