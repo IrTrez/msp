@@ -51,7 +51,7 @@ def quickAnimate(speed, dataFile, Body=None, plotLimits=30000):
     plt.pause(1)
     for u in tqdm(range(len(x))):
         currentClock = clock[u]
-        ax.plot(x[0:u], y[0:u], z[0:u], color="g")
+        ax.plot(x[0:u], y[0:u], z[0:u], color="g", lw=1)
         if showManoeuvres:
             for i, manoeuver in manoeuvreData.iterrows():
                 if manoeuver["clock"] > currentClock and manoeuver["clock"] < currentClock + speed:

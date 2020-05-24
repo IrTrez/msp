@@ -13,8 +13,8 @@ plt.style.use('dark_background')
 
 # INPUT
 DATAFILE = "runs/ManouvreTest.csv"
-SPEED = 200 # __ times speed
-limit = 10000
+SPEED = 400 # __ times speed
+limit = 20000
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -54,7 +54,7 @@ if manoeuvreFileAvailable:
         (DATAFILE[:-4] + "_man.csv"), usecols=["ID", "clock", "r"])
 
 
-print(len(data))
+print(f"Original amount of data points: {len(data)}", end="")
 
 droppedPoints = []
 for u in range(len(data)):
@@ -62,7 +62,8 @@ for u in range(len(data)):
         droppedPoints.append(u)
 
 data = data.drop(droppedPoints, axis=0).to_numpy()
-print(len(data))
+print(f", reduced to: {len(data)}")
+
 
 savename = DATAFILE[5:-4]
 headerText = savename + " " + str(SPEED) + "x speed"
@@ -73,14 +74,14 @@ def animate(i):
     if manoeuvreFileAvailable:
         # MANOEUVRE
         manoeuverPosList = []
-        manoeuverIDList = []
+        manoeuverTimeList = []
         for d, manoeuver in manoeuvreData.iterrows():
             if int((manoeuver["clock"] - clock.to_numpy()[0][0])/SPEED) < i:
                 manoeuverPos = manoeuver["r"][1:-1].split(" ")
                 manoeuverPos = [float(x) for x in manoeuverPos if x]
-                if manoeuver["ID"] not in manoeuverIDList:
+                if manoeuver["clock"] not in manoeuverTimeList:
                     manoeuverPosList.append(manoeuverPos)
-                    manoeuverIDList.append(manoeuver["ID"])
+                    manoeuverTimeList.append(manoeuver["clock"])
 
         if len(manoeuverPosList) > 0:
             mandisplaydata = np.array(manoeuverPosList).T
