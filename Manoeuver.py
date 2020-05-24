@@ -3,6 +3,7 @@ import simtools
 import time
 from tqdm import tqdm
 import math
+import numpy as np
 
 DATAFILE = "runs/ManouvreTest.csv"
 ATMOSPHEREDATA = "densityModels/MarsDensity.csv"
@@ -12,15 +13,12 @@ SPEED = 600  # __ times speed
 # USE s AS STANDARD TIME UNIT
 
 currentTime = time.time()
-limitAltitude = 500 # 260  #[km]. At this altitude density is just below 1*10^-10
-
-Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = simtools.Earth
 
 a = 10000
 e = 0.3
 i = math.radians(1)
-Omega = math.radians(30.89)
+Omega = math.radians(30.0)
 omega = math.radians(60.0)
 trueAnomaly = math.radians(40)
 
@@ -32,15 +30,20 @@ spacecraft.initKeplerOrbit(a,e,i,Omega,omega,trueAnomaly)
 
 
 # Add manoeuvers before propagate
+# Example of an inclination change
+# Note that for best results add Manoeuvres in order.
+spacecraft.addManouvreByDirection("p0", 1.3, "t")
+spacecraft.addManouvreByDirection("p2", -1.3, "t")
+spacecraft.addManouvreByDirection("a1", 0.3, "n")
+spacecraft.addManouvreByDirection("a2", 0.3, "n")
 
+# Some more examples of manoeuvres
+# spacecraft.addManouvreByDirection(1000, -0.5, "n")
 # spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, 6, "n")
-# spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, -6, "t")
-# spacecraft.addManouvreByDirection(spacecraft.start + 2 * spacecraft.orbitalPeriod, 1.5, "r")
-# spacecraft.addManouvreByDirection("p0", 2, "n")
-# spacecraft.addManouvreByDirection("p1", 1, "r")
-
+# spacecraft.addManouvreByDirection("p1", 1, "r")\
+# spacecraft.addManoeuverByVector(spacecraft.start + 1000, np.array([1,-1,1]))
 
 # PROPAGATE Here
-rlist = spacecraft.propagate(1*spacecraft.orbitalPeriod, DATAFILE, False)
+spacecraft.propagate(12*spacecraft.orbitalPeriod, DATAFILE, False)
 
 simtools.quickAnimate(SPEED, DATAFILE, Earth)
