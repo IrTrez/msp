@@ -293,9 +293,10 @@ class Body:
             data.to_csv(saveFile, sep=",")
 
             # Save Manoeuvre data
-            manoeuvreSavefile = saveFile[:-4] + "_man" + ".csv"
-            manoeuvreData = pd.DataFrame(self.manoeuvers)
-            manoeuvreData.to_csv(manoeuvreSavefile)
+            if len(self.manoeuvers) > 0:
+                manoeuvreSavefile = saveFile[:-4] + "_man" + ".csv"
+                manoeuvreData = pd.DataFrame(self.manoeuvers)
+                manoeuvreData.to_csv(manoeuvreSavefile)
 
 
     # Vallado ed. 4 Algorithmn 1 page 63
