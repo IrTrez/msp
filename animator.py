@@ -12,8 +12,9 @@ import os.path
 plt.style.use('dark_background')
 
 # INPUT
-DATAFILE = "runs/Aerobraking.csv"
-SPEED = 1000 # __ times speed
+DATAFILE = "runs/ManouvreTest.csv"
+SPEED = 200 # __ times speed
+limit = 10000
 
 # USE km AS STANDARD DISTANCE UNIT
 # USE s AS STANDARD TIME UNIT
@@ -22,7 +23,7 @@ muSun = 1.327178e11
 Mars = m.Planet(4.282837e4, 3396.2, 1.52367934 * AU, muSun, False)
 
 
-fig = plt.figure()
+fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(111, projection='3d')
 # ax.set_aspect('equal')
 
@@ -39,9 +40,9 @@ ax.plot_surface(x, y, z, color='tab:orange')
 line, = ax.plot([], [], lw=1)
 scatt, = ax.plot([], [], linestyle="", marker="o", color="white")
 
-ax.set_ylim(-40000, 40000)
-ax.set_xlim(-40000, 40000)
-ax.set_zlim(-40000, 40000)
+ax.set_ylim(-limit, limit)
+ax.set_xlim(-limit, limit)
+ax.set_zlim(-limit, limit)
 plt.axis("off")
 
 manoeuvreFileAvailable = os.path.isfile(DATAFILE[:-4] + "_man.csv")

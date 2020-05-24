@@ -44,7 +44,6 @@ def quickAnimate(speed, dataFile, Body=None, plotLimits=30000):
 
     manoeuvreFile = dataFile[:-4] + "_man.csv"
     showManoeuvres = True if os.path.isfile(manoeuvreFile) else False
-    print(showManoeuvres)
     if showManoeuvres:
         manoeuvreData = pd.read_csv((manoeuvreFile), index_col="ID")
 
@@ -73,6 +72,6 @@ def quickAnimate(speed, dataFile, Body=None, plotLimits=30000):
                     manoeuverPos = [float(x) for x in manoeuverPos if x]
                     ax.scatter(*manoeuverPos, marker=manMarker, color=manColor)
 
-        plt.pause(0.0000001)
+        plt.pause(0.0000000001)
         plt.clf
     plt.pause(5)

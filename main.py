@@ -37,6 +37,8 @@ class Planet:
             self.atmosphere = atmosphere
             self.atmosphericLimitAltitude = atmosphere.limitAltitude
             self.densityDict = atmosphere.densityDict
+        else:
+            self.atmosphere = False
 
 
 class Body:
@@ -46,8 +48,12 @@ class Body:
         self.parentRadius = parentBody.r
         self.parentRSOI = parentBody.rsoi
         if parentBody.atmosphere != False:
+            self.atmospheric = True
             self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
             self.densityDict = parentBody.densityDict
+        else:
+            self.atmospheric = False
+            self.atmosphericLimitAltitude = 0
 
         # Body variables
         self.m = mass
@@ -276,7 +282,7 @@ class Body:
             
             # Use refreshByTimestep depending on wheter the body is in atmosphere
             # plus 200 is a safety margin as it's takeing the previous altitude
-            if np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 200: 
+            if self.atmospheric and (np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 200): 
                 self.refreshByTimestep(dtAtmospheric , atmospheric)
                 rlist.append(self.r)
                 clocklist.append(self.clock)
