@@ -212,9 +212,8 @@ class Body:
                         if location == "p" and atPeriapsis:
                             # print(manoeuver)
                             if orbit == 0:
-                                dvMag = np.sqrt(manoeuver["dv"].dot(manoeuver["dv"]))
                                 self.manoeuvers.remove(manoeuver)
-                                self.addManouvreByDirection(self.clock, dvMag, manoeuver["manType"], 0)
+                                self.addManouvreByDirection(self.clock, manoeuver["dv"], manoeuver["manType"], 0, False)
                             else:
                                 orbit -= 1
                                 manoeuver["clock"] = location + str(orbit)
@@ -223,9 +222,8 @@ class Body:
                         elif location == "a" and atApoapsis:
                             # print(manoeuver)
                             if orbit == 0:
-                                dvMag = np.sqrt(manoeuver["dv"].dot(manoeuver["dv"]))
                                 self.manoeuvers.remove(manoeuver)
-                                self.addManouvreByDirection(self.clock, dvMag, manoeuver["manType"], 0)
+                                self.addManouvreByDirection(self.clock, manoeuver["dv"], manoeuver["manType"], 0, False)
                             else:
                                 orbit -= 1
                                 manoeuver["clock"] = location + str(orbit)
@@ -235,9 +233,13 @@ class Body:
 
                 elif isinstance(manoeuver["clock"], int) or isinstance(manoeuver["clock"], float):
                     if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
-                        vnew += manoeuver["dv"]
-                        manoeuver["r"] = self.r
-                        manoeuver["expired"] = True
+                        if isinstance(manoeuver["direction"], str):
+                            self.manoeuvers.remove(manoeuver)
+                            self.addManoeuverByDirection(self.clock, manoeuver["dv"], manoeuver["manType"], 0, False)
+                        else:
+                            vnew += manoeuver["dv"]
+                            manoeuver["r"] = self.r
+                            manoeuver["expired"] = True
 
         self.initPositionOrbit(rnew, vnew)
 
@@ -495,27 +497,13 @@ class Body:
         return rijk, vijk
 
 
-    # def ParkingOrbit(self):
-    #     '''
-
-    #         ap {float} -- semi major axis for parking orbit [km]
-
-    #     Returns:
-    #         POdv {ndarray} -- Carthesian velocity vector for transfer at apoapsis to parking orbit
-    #     '''
-
-    #     self.ap = 0.5 * (self.apoapsis+self.periapsis+self.atmosphericLimitAltitude)
-
-    #     self.POdv = abs(sqrt(self.mu*(2/self.apoapsis-1/self.a))-sqrt(self.mu*(2/self.apoapsis-1/self.ap)))
-    #     self.POdv = (self.v/np.sqrt(self.v.dot(self.v)))*self.POdv
-
-    #     return self.POdv
-
     def addManoeuverByVector(self, clock, dv, iterSinceCreation=11):
-        '''
+        '''Adds a direct manoeuvre to the manoeuvre list
+        Arguments:
+            clock {float} -- clock of manoeuvers
+            dv {ndarray} -- delta v for maneuvers in cartesian coordinates
+            iterSinceCreation {int} -- (DO NOT USE) Background parameter to ensure that manoeuvres run properly
 
-            clock (float) -- clock of manoeuvers
-            dv (ndarray) -- delta v for maneuvers in cartesian coordinates
 
         '''
         # gets latest ID
@@ -524,17 +512,24 @@ class Body:
         else:
             latestID = len(self.manoeuvers)
 
-        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
-            dv/np.sqrt(dv.dot(dv))), "manType": "g", "iterSinceCreation": iterSinceCreation})
+        self.manoeuvers.append({"ID": latestID,
+                                "clock": clock,
+                                "dv": dv,
+                                "expired": False,
+                                "direction": (dv/np.sqrt(dv.dot(dv))),
+                                "manType": "g",
+                                "iterSinceCreation": iterSinceCreation})
 
 
-    def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType, iterSinceCreation=11):
+    def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType, iterSinceCreation=11, temp=True):
         """Adds a magnitudal manoeuvre to the manoeuvrelist.
 
         Arguments:
             clock {float} -- clock to perform manoeuvre
             dvMagnitude {float} -- normal value of deltav
             manoeuvreType {string} -- manoeuvre type (tangential, radial and normal) or (t,r,n)
+            iterSinceCreation {int} -- (DO NOT USE) Background parameter to ensure that manoeuvres run properly
+            temp {Boolean} -- (DO NOT USE) Background parameter to ensure direction of manoeuvre is correct at burn
         """
         manoeuvreTypes = ["tangential", "t", "radial", "r", "normal", "n"]
         assert (manoeuvreType in manoeuvreTypes), "Incorrect manouvreType, use tangential, t, radial, r, normal or n"
@@ -545,25 +540,45 @@ class Body:
         else:
             latestID = len(self.manoeuvers)
 
-        # Create dv vector based on manoeuvretype and dvMagnitude
-        if (manoeuvreType == "tangential" or manoeuvreType == "t"):
-            manType = "t"
-            direction = self.v / np.sqrt(self.v.dot(self.v))
-            dv = dvMagnitude * direction
+        if temp:
+            if (manoeuvreType == "tangential" or manoeuvreType == "t"):
+                manType = "t"
+                dv = dvMagnitude
+                direction = "-"
+            if (manoeuvreType == "radial" or manoeuvreType == "r"):
+                manType = "r"
+                dv = dvMagnitude
+                direction = "-"
+            if (manoeuvreType == "normal" or manoeuvreType == "n"):
+                manType = "n"
+                dv = dvMagnitude
+                direction = "-"
+        
+        else:
+            # Create dv vector based on manoeuvretype and dvMagnitude
+            if (manoeuvreType == "tangential" or manoeuvreType == "t"):
+                manType = "t"
+                direction = self.v / np.sqrt(self.v.dot(self.v))
+                dv = dvMagnitude * direction
 
-        if (manoeuvreType == "radial" or manoeuvreType == "r"):
-            manType = "r"
-            direction = -self.r / np.sqrt(self.r.dot(self.r))
-            dv = dvMagnitude * direction
+            if (manoeuvreType == "radial" or manoeuvreType == "r"):
+                manType = "r"
+                direction = -self.r / np.sqrt(self.r.dot(self.r))
+                dv = dvMagnitude * direction
 
-        if (manoeuvreType == "normal" or manoeuvreType == "n"):
-            manType = "n"
-            directionTangential = self.v / np.sqrt(self.v.dot(self.v))
-            directionRadial = -self.r / np.sqrt(self.r.dot(self.r))
-            directionNormal = np.cross(directionTangential, directionRadial)
-            direction = directionNormal / \
-                np.sqrt(directionNormal.dot(directionNormal))
-            dv = dvMagnitude * direction
+            if (manoeuvreType == "normal" or manoeuvreType == "n"):
+                manType = "n"
+                directionTangential = self.v / np.sqrt(self.v.dot(self.v))
+                directionRadial = -self.r / np.sqrt(self.r.dot(self.r))
+                directionNormal = np.cross(directionTangential, directionRadial)
+                direction = directionNormal / \
+                    np.sqrt(directionNormal.dot(directionNormal))
+                dv = dvMagnitude * direction
 
-        self.manoeuvers.append({"ID": latestID, "clock": clock, "dv": dv, "expired": False, "direction": (
-            dv/np.sqrt(dv.dot(dv))), "manType": manType, "iterSinceCreation": iterSinceCreation})
+        self.manoeuvers.append({"ID": latestID,
+                                "clock": clock,
+                                "dv": dv,
+                                "expired": False,
+                                "direction": direction,
+                                "manType": manType,
+                                "iterSinceCreation": iterSinceCreation})

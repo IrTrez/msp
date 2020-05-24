@@ -25,7 +25,7 @@ Mars_atmosphere=m.Atmosphere(limitAltitude, densityFile=ATMOSPHEREDATA)
 Earth = m.Planet(398600.441, 6378.136, AU, muSun, Mars_atmosphere)
 
 a = 10000
-e = 0.1
+e = 0.3
 i = math.radians(1)
 Omega = math.radians(30.89)
 omega = math.radians(60.0)
@@ -55,15 +55,15 @@ ax.plot_surface(x, y, z, color='tab:cyan')
 # spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, 6, "n")
 # spacecraft.addManouvreByDirection(spacecraft.start + 1 * spacecraft.orbitalPeriod, -6, "t")
 # spacecraft.addManouvreByDirection(spacecraft.start + 2 * spacecraft.orbitalPeriod, 1.5, "r")
-spacecraft.addManouvreByDirection("p0", 0.4, "t")
+spacecraft.addManouvreByDirection("p0", 2, "n")
+spacecraft.addManouvreByDirection("p1", 1, "r")
 # spacecraft.addManouvreByDirection("p2", -0.4, "t")
-spacecraft.addManouvreByDirection("a2 ", 0.4, "t")
+# spacecraft.addManouvreByDirection("a3 ", 0.4, "t")
 # spacecraft.addManouvreByDirection("a4 ", 0.4, "t")
 # spacecraft.addManouvreByDirection("a4", 0.8, "t")
 
 # PROPAGATE Here
 rlist = spacecraft.propagate(6*spacecraft.orbitalPeriod, DATAFILE, False)
-print(spacecraft.a)
 
 ax.set_ylim(-30000, 30000)
 ax.set_xlim(-30000, 30000)
@@ -83,7 +83,7 @@ z = data.loc[:,"z"].to_numpy()
 
 manoeuvreData = pd.read_csv((DATAFILE[:-4] + "_man.csv"), index_col="ID")
 
-# print(rlist)
+
 plt.pause(1)
 for u in tqdm(range(len(x))):
     currentClock=clock[u]
