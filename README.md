@@ -25,10 +25,10 @@ Currently the package is not available on pypi. To install it directly via githu
 ## Usage
 To use the model:
 
-`import msp.msp as msp`
+`from msp import msp`
 
-`import msp.simtools as simtools`
+To visualise results use the quickAnimate function from simtools or the fully fledged animate function from animator:
 
-`import msp.animator as animator`
+`from msp import simtools, animator`
 
 Examples will be added in the future.
