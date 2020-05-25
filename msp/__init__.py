@@ -7,6 +7,6 @@ import tqdm
 import os
 
 # Local packages
-import msp
-import simtools
-import animator
+from . import msp
+from . import simtools
+from . import animator

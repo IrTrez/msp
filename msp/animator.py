@@ -1,10 +1,9 @@
 from mpl_toolkits.mplot3d import Axes3D
-import msp
+from . import msp
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 from tqdm import tqdm
-import math
 from matplotlib.animation import FuncAnimation
 import pandas as pd
 import mpl_toolkits.mplot3d.axes3d as p3

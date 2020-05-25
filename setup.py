@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="msp-IrTrez",  # Replace with your own username
+    name="msp-IrTrez",
     version="0.0.1",
     author="Tristan Dijkstra, Andrea Battegazzore, Hugo Chassagnette",
     author_email="tristan.dijkstra@gmail.com",
