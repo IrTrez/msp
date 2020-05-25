@@ -1,5 +1,5 @@
 from mpl_toolkits.mplot3d import Axes3D
-import msp
+from . import msp
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
