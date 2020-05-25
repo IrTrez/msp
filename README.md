@@ -16,3 +16,19 @@ Originally created by Tristan Dijkstra, Andrea Battegazzore and Hugo Chassagnett
 
 
 For creating matplotlib animations using the animator you need [ffmpeg](https://www.wikihow.com/Install-FFmpeg-on-Windows)
+
+## Install
+Currently the package is not available on pypi. To install it directly via github use:
+
+`pip install git+https://github.com/IrTrez/msp.git`
+
+## Usage
+To use the model:
+
+`import msp.msp as msp`
+
+`import msp.simtools as simtools`
+
+`import msp.animator as animator`
+
+Examples will be added in the future.
