@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="msp-IrTrez",
-    version="0.0.1",
+    version="0.1.0",
     author="Tristan Dijkstra, Andrea Battegazzore, Hugo Chassagnette",
     author_email="tristan.dijkstra@gmail.com",
     description="MSP: two-body astronautical model written in Python",
