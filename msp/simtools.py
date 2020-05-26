@@ -12,7 +12,7 @@ Earth = msp.Planet(398600.441, 6378.136, AU, muSun)
 Mars = msp.Planet(4.282837e4, 3396.2, 1.52367934 * AU, muSun, False)
 
 
-def quickAnimate(speed, dataFile, bodyColor="cyan", Body=None, plotLimits=30000):
+def quickAnimate(speed, dataFile, Body=None, bodyColor="cyan", plotLimits=30000):
     plt.style.use('seaborn-pastel')
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -26,7 +26,7 @@ def quickAnimate(speed, dataFile, bodyColor="cyan", Body=None, plotLimits=30000)
         y = Body.r * np.outer(np.sin(u), np.sin(v))
         z = Body.r * np.outer(np.ones(np.size(u)), np.cos(v))
         # Plot the surface
-        ax.plot_surface(x, y, z, color=f'tab: {str(bodyColor)}')
+        ax.plot_surface(x, y, z, color=str(bodyColor))
     
     ax.set_ylim(-30000, 30000)
     ax.set_xlim(-30000, 30000)
