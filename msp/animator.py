@@ -15,15 +15,15 @@ def animate(speed, dataFile, Body=None, bodyColor="cyan", plotLimits=30000):
     ax = fig.add_subplot(111, projection='3d')
 
     if Body is not None:
-            assert (type(Body) == msp.Planet), "Incorrect Body type, should be main.Planet"
-            # Sphere:
-            u = np.linspace(0, 2 * np.pi, 100)
-            v = np.linspace(0, np.pi, 100)
-            x = Body.r * np.outer(np.cos(u), np.sin(v))
-            y = Body.r * np.outer(np.sin(u), np.sin(v))
-            z = Body.r * np.outer(np.ones(np.size(u)), np.cos(v))
-            # Plot the surface
-            ax.plot_surface(x, y, z, color=f'tab:{str(bodyColor)}')
+        assert (type(Body) == msp.Planet), "Incorrect Body type, should be main.Planet"
+        # Sphere:
+        u = np.linspace(0, 2 * np.pi, 100)
+        v = np.linspace(0, np.pi, 100)
+        x = Body.r * np.outer(np.cos(u), np.sin(v))
+        y = Body.r * np.outer(np.sin(u), np.sin(v))
+        z = Body.r * np.outer(np.ones(np.size(u)), np.cos(v))
+        # Plot the surface
+        ax.plot_surface(x, y, z, color=str(bodyColor))
 
 
     line, = ax.plot([], [], lw=1)
