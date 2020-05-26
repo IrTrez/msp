@@ -64,7 +64,7 @@ class Body:
         # System variables
         self.clock = time.time()
         self.start = self.clock
-        self.manoeuvers = []
+        self.manoeuvres = []
 
 
     def getDensity(self, altitude):
@@ -94,17 +94,18 @@ class Body:
             useDegrees {boolean} -- Option to init angles with degrees  (default: {False})
         """
         if useDegrees:
-            i = radians(i)
-            Omega = radians(Omega)
-            omega = radians(omega)
-            trueAnomaly = radians(trueAnomaly)
+            self.i = radians(i)
+            self.Omega = radians(Omega)
+            self.omega = radians(omega)
+            self.trueAnomaly = radians(trueAnomaly)
+        else:
+            self.i = inclination
+            self.Omega = Omega
+            self.omega = omega
+            self.trueAnomaly = trueAnomaly
 
         self.a = semiMajorAxis
         self.e = eccentricity
-        self.i = inclination
-        self.Omega = Omega
-        self.omega = omega
-        self.trueAnomaly = trueAnomaly
 
      # anomalies and time to Periapse
         if self.e < 1:
@@ -187,23 +188,23 @@ class Body:
             vnew += adrag * dt
         
         # Add manoeuvre delta V
-        if len(self.manoeuvers) != 0 and any(not x["expired"] for x in self.manoeuvers):
+        if len(self.manoeuvres) != 0 and any(not x["expired"] for x in self.manoeuvres):
             Adistancer = 0
             Pdistancer = 0
-            for manoeuver in self.manoeuvers:
+            for manoeuvre in self.manoeuvres:
                 # this is so that it doesnt propagate multiple manouevres close to ap/peri
-                manoeuver["iterSinceCreation"] += 1
+                manoeuvre["iterSinceCreation"] += 1
                 
                 rnorm = np.sqrt(rnew.dot(rnew))
                 atPeriapsis = (abs(self.periapsis-rnorm) < 0.001)
                 atApoapsis = (abs(self.apoapsis-rnorm) < 0.001)
 
-                if (isinstance(manoeuver["clock"], str)) and (self.clock-self.start > 2) and (atApoapsis or atPeriapsis):
-                    if (manoeuver["clock"][0] in ["p", "a"]) and (manoeuver["expired"] == False) and (manoeuver["iterSinceCreation"] > 10):
-                        location = manoeuver["clock"][0]
-                        orbit = int(manoeuver["clock"][1:])
+                if (isinstance(manoeuvre["clock"], str)) and (self.clock-self.start > 2) and (atApoapsis or atPeriapsis):
+                    if (manoeuvre["clock"][0] in ["p", "a"]) and (manoeuvre["expired"] == False) and (manoeuvre["iterSinceCreation"] > 10):
+                        location = manoeuvre["clock"][0]
+                        orbit = int(manoeuvre["clock"][1:])
                         
-                        # This is to make sure it only propagates the manoeuver once at peri/apoapsis
+                        # This is to make sure it only propagates the manoeuvre once at peri/apoapsis
                         if Adistancer > 0:
                             Adistancer -= 1
                             continue
@@ -217,36 +218,36 @@ class Body:
                             Adistancer = 10
 
                         if location == "p" and atPeriapsis:
-                            # print(manoeuver)
+                            # print(manoeuvre)
                             if orbit == 0:
-                                self.manoeuvers.remove(manoeuver)
-                                self.addManouvreByDirection(self.clock, manoeuver["dv"], manoeuver["manType"], 0, False)
+                                self.manoeuvres.remove(manoeuvre)
+                                self.addManoeuvreByDirection(self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
                             else:
                                 orbit -= 1
-                                manoeuver["clock"] = location + str(orbit)
-                                manoeuver["iterSinceCreation"] = 0
+                                manoeuvre["clock"] = location + str(orbit)
+                                manoeuvre["iterSinceCreation"] = 0
 
                         elif location == "a" and atApoapsis:
-                            # print(manoeuver)
+                            # print(manoeuvre)
                             if orbit == 0:
-                                self.manoeuvers.remove(manoeuver)
-                                self.addManouvreByDirection(self.clock, manoeuver["dv"], manoeuver["manType"], 0, False)
+                                self.manoeuvres.remove(manoeuvre)
+                                self.addManoeuvreByDirection(self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
                             else:
                                 orbit -= 1
-                                manoeuver["clock"] = location + str(orbit)
-                                manoeuver["iterSinceCreation"] = 0 
+                                manoeuvre["clock"] = location + str(orbit)
+                                manoeuvre["iterSinceCreation"] = 0 
                     else:
-                        assert (manoeuver["clock"][0] in ["p", "a"]), "Only p and a supported."
+                        assert (manoeuvre["clock"][0] in ["p", "a"]), "Only p and a supported."
 
-                elif isinstance(manoeuver["clock"], int) or isinstance(manoeuver["clock"], float):
-                    if self.clock > manoeuver["clock"] and manoeuver["expired"] == False:
-                        if isinstance(manoeuver["direction"], str):
-                            self.manoeuvers.remove(manoeuver)
-                            self.addManoeuverByDirection(self.clock, manoeuver["dv"], manoeuver["manType"], 0, False)
+                elif isinstance(manoeuvre["clock"], int) or isinstance(manoeuvre["clock"], float):
+                    if self.clock > manoeuvre["clock"] and manoeuvre["expired"] == False:
+                        if isinstance(manoeuvre["direction"], str):
+                            self.manoeuvres.remove(manoeuvre)
+                            self.addManoeuvreByDirection(self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
                         else:
-                            vnew += manoeuver["dv"]
-                            manoeuver["r"] = self.r
-                            manoeuver["expired"] = True
+                            vnew += manoeuvre["dv"]
+                            manoeuvre["r"] = self.r
+                            manoeuvre["expired"] = True
 
         self.initPositionOrbit(rnew, vnew)
 
@@ -303,9 +304,9 @@ class Body:
             data.to_csv(saveFile, sep=",")
 
             # Save Manoeuvre data
-            if len(self.manoeuvers) > 0:
+            if len(self.manoeuvres) > 0:
                 manoeuvreSavefile = saveFile[:-4] + "_man" + ".csv"
-                manoeuvreData = pd.DataFrame(self.manoeuvers)
+                manoeuvreData = pd.DataFrame(self.manoeuvres)
                 manoeuvreData.to_csv(manoeuvreSavefile)
 
 
@@ -508,22 +509,22 @@ class Body:
         return rijk, vijk
 
 
-    def addManoeuverByVector(self, clock, dv, iterSinceCreation=11):
+    def addManoeuvreByVector(self, clock, dv, iterSinceCreation=11):
         '''Adds a direct manoeuvre to the manoeuvre list
         Arguments:
-            clock {float} -- clock of manoeuvers
+            clock {float} -- clock of manoeuvres
             dv {ndarray} -- delta v for maneuvers in cartesian coordinates
             iterSinceCreation {int} -- (DO NOT USE) Background parameter to ensure that manoeuvres run properly
 
 
         '''
         # gets latest ID
-        if len(self.manoeuvers) == 0:
+        if len(self.manoeuvres) == 0:
             latestID = 0
         else:
-            latestID = len(self.manoeuvers)
+            latestID = len(self.manoeuvres)
 
-        self.manoeuvers.append({"ID": latestID,
+        self.manoeuvres.append({"ID": latestID,
                                 "clock": clock,
                                 "dv": dv,
                                 "expired": False,
@@ -532,7 +533,7 @@ class Body:
                                 "iterSinceCreation": iterSinceCreation})
 
 
-    def addManouvreByDirection(self, clock, dvMagnitude, manoeuvreType, iterSinceCreation=11, temp=True):
+    def addManoeuvreByDirection(self, clock, dvMagnitude, manoeuvreType, iterSinceCreation=11, temp=True):
         """Adds a magnitudal manoeuvre to the manoeuvrelist.
 
         Arguments:
@@ -543,13 +544,13 @@ class Body:
             temp {Boolean} -- (DO NOT USE) Background parameter to ensure direction of manoeuvre is correct at burn
         """
         manoeuvreTypes = ["tangential", "t", "radial", "r", "normal", "n"]
-        assert (manoeuvreType in manoeuvreTypes), "Incorrect manouvreType, use tangential, t, radial, r, normal or n"
+        assert (manoeuvreType in manoeuvreTypes), "Incorrect ManoeuvreType, use tangential, t, radial, r, normal or n"
 
         # gets latest ID
-        if len(self.manoeuvers) == 0:
+        if len(self.manoeuvres) == 0:
             latestID = 0
         else:
-            latestID = len(self.manoeuvers)
+            latestID = len(self.manoeuvres)
 
         if temp:
             if (manoeuvreType == "tangential" or manoeuvreType == "t"):
@@ -586,7 +587,7 @@ class Body:
                     np.sqrt(directionNormal.dot(directionNormal))
                 dv = dvMagnitude * direction
 
-        self.manoeuvers.append({"ID": latestID,
+        self.manoeuvres.append({"ID": latestID,
                                 "clock": clock,
                                 "dv": dv,
                                 "expired": False,
