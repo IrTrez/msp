@@ -33,4 +33,4 @@ To visualise results use the quickAnimate function from simtools or the fully fl
 
 `from msp import simtools, animator`
 
-Examples will be added in the future.
+Examples are available [here](https://github.com/IrTrez/msp-examples).
