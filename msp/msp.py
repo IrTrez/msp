@@ -94,7 +94,7 @@ class Body:
             useDegrees {boolean} -- Option to init angles with degrees  (default: {False})
         """
         if useDegrees:
-            self.i = radians(i)
+            self.i = radians(inclination)
             self.Omega = radians(Omega)
             self.omega = radians(omega)
             self.trueAnomaly = radians(trueAnomaly)
