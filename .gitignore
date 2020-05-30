@@ -1,6 +1,8 @@
 # Project Folders:
 runs
 animations
+test.py
+test*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -134,3 +136,4 @@ dmypy.json
 .pyre/
 .vscode/launch.json
 tempCodeRunnerFile.py
+runfiles/test.py
