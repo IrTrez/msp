@@ -4,27 +4,29 @@ import pandas as pd
 import os
 from tqdm import tqdm as tqdm
 from math import acos, cos, cosh, asin, sin, sinh, exp, acosh, asinh, copysign,\
-     sqrt, pi, inf, radians
+    sqrt, pi, inf, radians
 
 
 class Atmosphere:
-    def __init__(self, limitAltitude, densityFunction = None, densityFile = None):
+    def __init__(self, limitAltitude, densityFunction=None, densityFile=None):
         self.limitAltitude = limitAltitude
-        assert not (densityFunction is not None and densityFile is not None), "Only one input method of atmosphere can be given"
-        assert not (densityFunction is None and densityFile is None), "Multiple methods of atmosphere are given"
+        assert not (
+            densityFunction is not None and densityFile is not None), "Only one input method of atmosphere can be given"
+        assert not (
+            densityFunction is None and densityFile is None), "Multiple methods of atmosphere are given"
         if densityFunction is not None:
             # create dictionary with density per meter altitude. density in kg/m^3 altitude in km
-            raise DeprecationWarning("DensityFunction is temporarily deprecated, use densityFile instead")
+            raise DeprecationWarning(
+                "DensityFunction is temporarily deprecated, use densityFile instead")
         if densityFile is not None:
             density = pd.read_csv(densityFile)
-            density.iloc[:, 0] = density.iloc[:, 0].apply(round,args=[3])
+            density.iloc[:, 0] = density.iloc[:, 0].apply(round, args=[3])
             density.set_index("Altitude", inplace=True)
             self.densityDict = density.to_dict()["Density"]
 
 
-
 class Planet:
-    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere:Atmosphere=False):
+    def __init__(self, gravitationalParameter, radius, semiMajorAxis, parentGravitationalParameter, atmosphere: Atmosphere = False):
         self.mu = gravitationalParameter
         self.muParent = parentGravitationalParameter
         self.r = radius
@@ -42,44 +44,13 @@ class Planet:
             self.atmosphere = False
 
 
-class Body:
-    def __init__(self, parentBody, mass, DragCoeff=0, surfaceArea=0):
-        # Parentbody variables
-        self.mu = parentBody.mu
-        self.parentRadius = parentBody.r
-        self.parentRSOI = parentBody.rsoi
-        if parentBody.atmosphere != False:
-            self.atmospheric = True
-            self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
-            self.densityDict = parentBody.densityDict
-        else:
-            self.atmospheric = False
-            self.atmosphericLimitAltitude = 0
-
-        # Body variables
-        self.m = mass
-        self.CD = DragCoeff
-        self.surfaceArea = surfaceArea
-
+class CoreBody:
+    def __init__(self):
         # System variables
         self.clock = time.time()
         self.start = self.clock
-        self.manoeuvres = []
 
-
-    def getDensity(self, altitude):
-        """Pulls density from self.densityDict
-
-        Arguments:
-            altitude {float} -- altitude
-
-        Returns:
-            float -- Atmospheric density in kg/m^3
-        """
-        return self.densityDict[round(altitude,3)]
-
-
-    def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly = 0.0, useDegrees = False):
+    def initKeplerOrbit(self, semiMajorAxis, eccentricity, inclination, Omega, omega, trueAnomaly=0.0, useDegrees=False):
         """Set up or refresh an orbit's parameters using keplerian elements
         
         Arguments:
@@ -109,9 +80,11 @@ class Body:
 
      # anomalies and time to Periapse
         if self.e < 1:
-            self.orbitalPeriod = 2 * pi * sqrt((self.a * self.a * self.a)/self.mu)
+            self.orbitalPeriod = 2 * pi * \
+                sqrt((self.a * self.a * self.a)/self.mu)
 
-            eccentricAnomaly = asin((sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
+            eccentricAnomaly = asin(
+                (sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
             meanAnomaly = eccentricAnomaly - (self.e * sin(eccentricAnomaly))
             n = sqrt(self.mu / (self.a * self.a * self.a))
             self.timeToPeriapsis = meanAnomaly / n
@@ -119,19 +92,21 @@ class Body:
 
         elif self.e > 1:
             # hyperbolicAnomaly = asinh((sin(self.trueAnomaly) * sqrt(self.e*self.e - 1)) / (1 + (self.e * cos(self.trueAnomaly))))
-            hyperbolicAnomaly = acosh((self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
+            hyperbolicAnomaly = acosh(
+                (self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
             meanAnomaly = self.e * sinh(hyperbolicAnomaly) - hyperbolicAnomaly
             n = sqrt(self.mu/(- self.a * self.a * self.a))
             self.timeToPeriapsis = -meanAnomaly / n
 
-        self.r, self.v = self.COEtoRV(self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
-   
-        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
+        self.r, self.v = self.COEtoRV(
+            self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly)
+
+        self.altitude = self.r - \
+            (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
 
-        self.dt = 1 # default global timestep
-
+        self.dt = 1  # default global timestep
 
     def initPositionOrbit(self, r, v):
         """Set up or refresh an orbit using carthesian position and velocity vectors
@@ -142,15 +117,19 @@ class Body:
         """
         self.r = r
         self.v = v
-        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
+        self.altitude = self.r - \
+            (self.parentRadius * (self.r/np.sqrt(r.dot(r))))
 
-        self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(self.r, self.v)
+        self.p, self.a, self.e, self.i, self.Omega, self.omega, self.trueAnomaly, _, _, _ = self.RVtoCOE(
+            self.r, self.v)
 
-                # anomalies and time to Periapse
+        # anomalies and time to Periapse
         if self.e < 1:
-            self.orbitalPeriod = 2 * pi * sqrt((self.a * self.a * self.a)/self.mu)
+            self.orbitalPeriod = 2 * pi * \
+                sqrt((self.a * self.a * self.a)/self.mu)
 
-            eccentricAnomaly = asin((sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
+            eccentricAnomaly = asin(
+                (sin(self.trueAnomaly) * sqrt(1 - self.e*self.e)) / (1 + (self.e * cos(self.trueAnomaly))))
             meanAnomaly = eccentricAnomaly - (self.e * sin(eccentricAnomaly))
             n = sqrt(self.mu / (self.a * self.a * self.a))
             self.timeToPeriapsis = meanAnomaly / n
@@ -158,17 +137,251 @@ class Body:
 
         elif self.e > 1:
             # hyperbolicAnomaly = asinh((sin(self.trueAnomaly) * sqrt(self.e*self.e - 1)) / (1 + (self.e * cos(self.trueAnomaly))))
-            hyperbolicAnomaly = acosh((self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
+            hyperbolicAnomaly = acosh(
+                (self.e + cos(self.trueAnomaly) / (1 + self.e * cos(self.trueAnomaly))))
             meanAnomaly = self.e * sinh(hyperbolicAnomaly) - hyperbolicAnomaly
             n = sqrt(self.mu/(- self.a * self.a * self.a))
             self.timeToPeriapsis = -meanAnomaly / n
 
-        self.altitude = self.r - (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
+        self.altitude = self.r - \
+            (self.parentRadius * (self.r/np.sqrt(self.r.dot(self.r))))
         self.apoapsis = self.a * (1 + self.e)
         self.periapsis = self.a * (1 - self.e)
 
-        self.dt = 1 # default global timestep
+        self.dt = 1  # default global timestep
 
+    # Vallado ed. 4 Algorithmn 1 page 63
+
+    def c2_c3(self, psi):
+        """Obtain c2 and c3 values used for the universal solution method of kepler's problem
+        
+        Arguments:
+            psi {float} -- psi value for universal solution method [rad]
+        
+        Returns:
+            float, float -- c2, c3
+        """
+        if psi > 10e-6:
+            c2 = (1 - cos(sqrt(psi))) / psi
+            c3 = (sqrt(psi) - sin(sqrt(psi))) / sqrt(psi * psi * psi)
+        elif psi < -10e-6:
+            c2 = (1 - cosh(sqrt(-psi)))/psi
+            c3 = (sinh(sqrt(-psi) - sqrt(-psi))) / sqrt((-psi * psi * psi))
+        else:
+            c2 = 0.5
+            c3 = 1./6.
+        return c2, c3
+
+    # Vallado ed. 4 Algorithmn 8 page 93: change of positions with time
+
+    def keplerTime(self, r, v, dt):
+        """Returns new velocity and position vectors with change over time
+        
+        Arguments:
+            r {ndarray} -- Carthesian position vector [km]
+            v {ndarray} -- Carthesian velocity vector [km/s]
+            dt {float} -- Change in time
+        
+        Returns:
+            ndarray, ndarray -- new velocity and position vectors
+        """
+
+        # We call the universal parameter chi (weird greek capital X)
+        vnorm = np.sqrt(v.dot(v))
+        rnorm = np.sqrt(r.dot(r))
+        sqrtmu = sqrt(self.mu)
+        rdotv = r.dot(v)
+
+        eta = ((vnorm * vnorm) / 2) - (self.mu/rnorm)
+        alpha = ((-(vnorm * vnorm)) / self.mu) + (2 / rnorm)
+
+        if alpha > 0:
+            assert (alpha != 1), "Alpha in Kepler Time is 1"
+            chi = sqrtmu * dt * alpha
+        elif alpha < 0:  # e>1
+            alphainv = 1/alpha  # this is actually semi major axis
+            chi = (np.sign(dt) * sqrt(-alphainv) *
+                   np.log((-2 * self.mu * alpha * dt) /
+                          (rdotv + np.sign(dt) *
+                              sqrt(-self.mu / alpha) * (1 - rnorm * alpha))))
+        else:
+            print("parabola in keplerTime")
+            chi = sqrtmu * dt / rnorm
+
+        while True:
+            chiLast = chi
+            psi = chi * chi * alpha
+            c2, c3 = self.c2_c3(psi)
+
+            rr = (chi * chi * c2) + ((rdotv/sqrtmu) *
+                                     chi * (1-psi*c3)) + (rnorm * (1-psi*c2))
+
+            chi += ((sqrtmu * dt) - (chi*chi*chi*c3) - ((np.dot(r, v) /
+                                                         self.mu)*chi*chi*c2) - (rnorm*chi*(1-psi*c3)))/rr
+
+            if abs(chiLast-chi) < 10e-6:
+                break
+
+        f = 1 - ((chi*chi / rnorm) * c2)
+        fdot = (sqrtmu / (rr * rnorm)) * chi * ((psi*c3) - 1)
+        g = dt - ((chi*chi*chi / sqrtmu) * c3)
+        gdot = 1 - ((chi*chi / rr) * c2)
+
+        rnew = (f * r) + (g * v)
+        vnew = (fdot * r) + (gdot * v)
+        succes = (f * gdot) - (fdot * g)
+        assert abs(succes-1) < 10e-6, "Succes is not 1 but: " + str(succes)
+        return rnew, vnew
+
+    # Vallado ed. 4 Algorithm 9 page 113
+
+    def RVtoCOE(self, r, v):
+        """Converts carthesian position and velocity vectors to keplerian elements
+        
+        Arguments:
+            r {ndarray} -- Carthesian position vector
+            v {ndarray} -- Carthesian velocity vector
+        
+        Returns:
+            floats -- semi-latus rectum, semi-major axis, eccentricity, inclination, Omega, omega, True Anomaly, (True omega, u, true lambda) [km] [rad]
+        """
+        I = [1, 0, 0]
+        J = [0, 1, 0]
+        K = [0, 0, 1]
+
+        vnorm = np.sqrt(v.dot(v))
+        rnorm = np.sqrt(r.dot(r))
+
+        h = np.cross(r, v)
+        hnorm = np.sqrt(h.dot(h))
+
+        n = np.cross(K, h)
+        nnorm = np.sqrt(n.dot(n))
+
+        e = ((((vnorm * vnorm)-self.mu/rnorm) * r) -
+             (np.dot(r, v) * v)) / (self.mu)  # is a vector
+        enorm = np.sqrt(e.dot(e))
+
+        eta = (((vnorm * vnorm)/2) - (self.mu/rnorm))
+
+        if enorm != 1.0:
+            a = -self.mu / (2 * eta)
+            p = a * (1 - enorm*enorm)
+        else:
+            p = hnorm*hnorm / self.mu
+            a = inf
+
+        i = acos(h[2]/hnorm)
+
+        # acos should work here instead of np.arccos since Omega should not be an array
+        Omega = acos(n[0]/nnorm)
+        if n[1] < 0:
+            Omega = 2*pi-Omega
+
+        omega = acos(np.dot(n, e)/(nnorm*enorm))
+        if e[2] < 0:
+            omega = 2*pi-omega
+
+        # nu=greek "v" used for poisson ratio
+        trueAnomaly = acos(np.dot(e, r)/(enorm*rnorm))
+        if np.dot(r, v) < 0:
+            trueAnomaly = 2*pi-trueAnomaly
+
+        omega_true, lambda_true, u = None, None, None
+        if enorm < 1 and i == 0:
+            omega_true = acos(e[1]/enorm)
+            if e[1] < 0:
+                omega_true = 2*pi-omega_true
+
+        elif enorm == 0 and i != 0:
+            u = acos(np.dot(n, r)/(nnorm*rnorm))
+            if r[2] < 0:
+                u = 2*pi-u
+
+        elif enorm == 0 and i == 0:
+            lambda_true = acos(r[0]/rnorm)
+            if r[1] < 0:
+                lambda_true = 2*pi-lambda_true
+
+        return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
+
+    # Vallado ed. 4 Algorithmn 10 page 118
+
+    def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None, p=None):
+        """Takes in keplerian elements and outputs carthesian position and velocity vectors
+        
+        Arguments:
+            a {float} -- semi-major axis
+            e {float} -- eccentricity
+            i {float} -- inclination [rad]
+            Omega {float} -- Big Omega [rad]
+            omega {float} -- argument of periapse [rad]
+            trueAnomaly {float} -- True Anomaly [rad]
+        
+        Keyword Arguments:
+            omega_true {float} -- take omega true as input [rad] (default: {None})
+            u {float} -- take omega true as input [rad] (default: {None})
+            lambda_true {float} -- take omega true as input [rad] (default: {None})
+            p {float} -- Take semi latus rectum as an input instead of semi major axis
+        
+        Returns:
+            r, v -- carthesian position and velocity vectors
+        """
+
+        # Semi latus rectum this is different from source material where p is taken as input:
+        # when a p is also given it uses p instead of a for calculations
+        if p is None:
+            p = a * (1 - e*e)
+
+        rpqw = np.array([((p * cos(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
+                         ((p * sin(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
+                         0])
+
+        vpqw = np.array([-1 * sqrt(self.mu/p) * sin(trueAnomaly),
+                         sqrt(self.mu/p) * (e + cos(trueAnomaly)),
+                         0])
+
+        PQWtoIJKtransform = np.array([[cos(Omega) * cos(omega) - sin(Omega) * sin(omega) * cos(i), -cos(Omega) * sin(omega) - sin(Omega) * cos(omega) * cos(i), sin(Omega) * sin(i)],
+                                      [sin(Omega) * cos(omega) + cos(Omega) * sin(omega) * cos(i), -sin(Omega) * sin(
+                                          omega) + cos(Omega) * cos(omega) * cos(i), -cos(Omega) * sin(i)],
+                                      [sin(omega) * sin(i), cos(omega) * sin(i), cos(i)]])
+
+        rijk = np.matmul(PQWtoIJKtransform, rpqw)
+        vijk = np.matmul(PQWtoIJKtransform, vpqw)
+        return rijk, vijk
+
+class SpaceCraftBody(CoreBody):
+    def __init__(self, parentBody, mass, DragCoeff=0, surfaceArea=0):
+        super().__init__()
+        self.mu = parentBody.mu
+        self.parentRadius = parentBody.r
+        self.parentRSOI = parentBody.rsoi
+        if parentBody.atmosphere != False:
+            self.atmospheric = True
+            self.atmosphericLimitAltitude = parentBody.atmosphericLimitAltitude
+            self.densityDict = parentBody.densityDict
+        else:
+            self.atmospheric = False
+            self.atmosphericLimitAltitude = 0
+
+        # Body variables
+        self.m = mass
+        self.CD = DragCoeff
+        self.surfaceArea = surfaceArea
+
+        # System variables
+        self.manoeuvres = []
+
+    def getDensity(self, altitude):
+        """Pulls density from self.densityDict
+
+        Arguments:
+            altitude {float} -- altitude
+
+        Returns:
+            float -- Atmospheric density in kg/m^3
+        """
+        return self.densityDict[round(altitude, 3)]
 
     def refreshByTimestep(self, dt, atmospheric):
         """Medium level function to refresh the elements of an orbit. \n
@@ -180,13 +393,15 @@ class Body:
         """
         self.clock += dt
         rnew, vnew = self.keplerTime(self.r, self.v, dt)
-        self.altitude = rnew - (self.parentRadius * (rnew/np.sqrt(rnew.dot(rnew))))
+        self.altitude = rnew - (self.parentRadius *
+                                (rnew/np.sqrt(rnew.dot(rnew))))
         altitudenorm = np.sqrt(self.altitude.dot(self.altitude))
         if (altitudenorm < self.atmosphericLimitAltitude and atmospheric):
             vnorm = np.sqrt(vnew.dot(vnew))
-            adrag = -0.5 * self.getDensity(altitudenorm) * ((self.CD * self.surfaceArea)/self.m) * vnew * vnew * (vnew/vnorm)
+            adrag = -0.5 * self.getDensity(altitudenorm) * (
+                (self.CD * self.surfaceArea)/self.m) * vnew * vnew * (vnew/vnorm)
             vnew += adrag * dt
-        
+
         # Add manoeuvre delta V
         if len(self.manoeuvres) != 0 and any(not x["expired"] for x in self.manoeuvres):
             Adistancer = 0
@@ -194,7 +409,7 @@ class Body:
             for manoeuvre in self.manoeuvres:
                 # this is so that it doesnt propagate multiple manouevres close to ap/peri
                 manoeuvre["iterSinceCreation"] += 1
-                
+
                 rnorm = np.sqrt(rnew.dot(rnew))
                 atPeriapsis = (abs(self.periapsis-rnorm) < 0.001)
                 atApoapsis = (abs(self.apoapsis-rnorm) < 0.001)
@@ -203,7 +418,7 @@ class Body:
                     if (manoeuvre["clock"][0] in ["p", "a"]) and (manoeuvre["expired"] == False) and (manoeuvre["iterSinceCreation"] > 10):
                         location = manoeuvre["clock"][0]
                         orbit = int(manoeuvre["clock"][1:])
-                        
+
                         # This is to make sure it only propagates the manoeuvre once at peri/apoapsis
                         if Adistancer > 0:
                             Adistancer -= 1
@@ -221,7 +436,8 @@ class Body:
                             # print(manoeuvre)
                             if orbit == 0:
                                 self.manoeuvres.remove(manoeuvre)
-                                self.addManoeuvreByDirection(self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
+                                self.addManoeuvreByDirection(
+                                    self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
                             else:
                                 orbit -= 1
                                 manoeuvre["clock"] = location + str(orbit)
@@ -231,19 +447,22 @@ class Body:
                             # print(manoeuvre)
                             if orbit == 0:
                                 self.manoeuvres.remove(manoeuvre)
-                                self.addManoeuvreByDirection(self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
+                                self.addManoeuvreByDirection(
+                                    self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
                             else:
                                 orbit -= 1
                                 manoeuvre["clock"] = location + str(orbit)
-                                manoeuvre["iterSinceCreation"] = 0 
+                                manoeuvre["iterSinceCreation"] = 0
                     else:
-                        assert (manoeuvre["clock"][0] in ["p", "a"]), "Only p and a supported."
+                        assert (manoeuvre["clock"][0] in [
+                                "p", "a"]), "Only p and a supported."
 
                 elif isinstance(manoeuvre["clock"], int) or isinstance(manoeuvre["clock"], float):
                     if self.clock > manoeuvre["clock"] and manoeuvre["expired"] == False:
                         if isinstance(manoeuvre["direction"], str):
                             self.manoeuvres.remove(manoeuvre)
-                            self.addManoeuvreByDirection(self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
+                            self.addManoeuvreByDirection(
+                                self.clock, manoeuvre["dv"], manoeuvre["manType"], 0, False)
                         else:
                             vnew += manoeuvre["dv"]
                             manoeuvre["r"] = self.r
@@ -251,7 +470,7 @@ class Body:
 
         self.initPositionOrbit(rnew, vnew)
 
-    def propagate(self, timeJump, saveFile = None, atmospheric = False, dtAtmospheric = 1, dtNormal = 1):
+    def propagate(self, timeJump, saveFile=None, atmospheric=False, dtAtmospheric=1, dtNormal=1):
         """Highest level function to propagate a body's orbit with time.
 
         Arguments:
@@ -281,11 +500,11 @@ class Body:
                 print("Radius:", np.sqrt(self.r.dot(self.r)), ":", self.r)
                 print("Altitude:", self.altitude.dot(self.altitude))
                 break
-            
+
             # Use refreshByTimestep depending on wheter the body is in atmosphere
             # plus 200 is a safety margin as it's takeing the previous altitude
-            if self.atmospheric and (np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 200): 
-                self.refreshByTimestep(dtAtmospheric , atmospheric)
+            if self.atmospheric and (np.sqrt(self.altitude.dot(self.altitude)) < self.atmosphericLimitAltitude + 200):
+                self.refreshByTimestep(dtAtmospheric, atmospheric)
                 rlist.append(self.r)
                 clocklist.append(self.clock)
             else:
@@ -300,7 +519,8 @@ class Body:
                 os.makedirs("runs")
             # Save position data
             rlist = np.array(rlist).T
-            data = pd.DataFrame({"clock":clocklist, "x":rlist[0], "y":rlist[1], "z":rlist[2]})
+            data = pd.DataFrame(
+                {"clock": clocklist, "x": rlist[0], "y": rlist[1], "z": rlist[2]})
             data.to_csv(saveFile, sep=",")
 
             # Save Manoeuvre data
@@ -308,206 +528,6 @@ class Body:
                 manoeuvreSavefile = saveFile[:-4] + "_man" + ".csv"
                 manoeuvreData = pd.DataFrame(self.manoeuvres)
                 manoeuvreData.to_csv(manoeuvreSavefile)
-
-
-    # Vallado ed. 4 Algorithmn 1 page 63
-    def c2_c3(self, psi):
-        """Obtain c2 and c3 values used for the universal solution method of kepler's problem
-        
-        Arguments:
-            psi {float} -- psi value for universal solution method [rad]
-        
-        Returns:
-            float, float -- c2, c3
-        """
-        if psi > 10e-6:
-            c2 = (1 - cos(sqrt(psi))) / psi
-            c3 = (sqrt(psi) - sin(sqrt(psi))) / sqrt(psi * psi * psi)
-        elif psi < -10e-6:
-            c2 = (1 - cosh(sqrt(-psi)))/psi
-            c3 = (sinh(sqrt(-psi) - sqrt(-psi))) / sqrt((-psi * psi * psi))
-        else:
-            c2 = 0.5
-            c3 = 1./6.
-        return c2, c3
-
-
-    # Vallado ed. 4 Algorithmn 8 page 93: change of positions with time
-    def keplerTime(self, r, v, dt):
-        """Returns new velocity and position vectors with change over time
-        
-        Arguments:
-            r {ndarray} -- Carthesian position vector [km]
-            v {ndarray} -- Carthesian velocity vector [km/s]
-            dt {float} -- Change in time
-        
-        Returns:
-            ndarray, ndarray -- new velocity and position vectors
-        """
-
-        # We call the universal parameter chi (weird greek capital X)
-        vnorm = np.sqrt(v.dot(v))
-        rnorm = np.sqrt(r.dot(r))
-        sqrtmu = sqrt(self.mu)
-        rdotv = r.dot(v)
-
-        eta = ((vnorm * vnorm) / 2) - (self.mu/rnorm)
-        alpha = ((-(vnorm * vnorm)) / self.mu) + (2 / rnorm)
-
-        if alpha > 0:
-            assert (alpha != 1), "Alpha in Kepler Time is 1"
-            chi = sqrtmu * dt * alpha
-        elif alpha < 0:  # e>1
-            alphainv = 1/alpha  # this is actually semi major axis
-            chi = (np.sign(dt) * sqrt(-alphainv) *
-                      np.log((-2 * self.mu * alpha * dt) /
-                             (rdotv + np.sign(dt) *
-                              sqrt(-self.mu / alpha) * (1 - rnorm * alpha))))
-        else:
-            print("parabola in keplerTime")
-            chi = sqrtmu * dt / rnorm
-
-
-        while True:
-            chiLast = chi
-            psi = chi * chi * alpha
-            c2, c3 = self.c2_c3(psi)
-
-            rr = (chi * chi * c2) + ((rdotv/sqrtmu) * chi * (1-psi*c3)) + (rnorm * (1-psi*c2))
-
-            chi += ((sqrtmu * dt) - (chi*chi*chi*c3) - ((np.dot(r, v)/self.mu)*chi*chi*c2) - (rnorm*chi*(1-psi*c3)))/rr
-
-            if abs(chiLast-chi) < 10e-6:
-                break
-
-
-        f = 1 - ((chi*chi / rnorm) * c2)
-        fdot = (sqrtmu / (rr * rnorm)) * chi * ((psi*c3) - 1)
-        g = dt - ((chi*chi*chi / sqrtmu) * c3)
-        gdot = 1 - ((chi*chi / rr) * c2)
-
-        rnew = (f * r) + (g * v)
-        vnew = (fdot * r) + (gdot * v)
-        succes = (f * gdot) - (fdot * g)
-        assert abs(succes-1) < 10e-6, "Succes is not 1 but: " + str(succes)
-        return rnew, vnew
-
-
-    # Vallado ed. 4 Algorithm 9 page 113
-    def RVtoCOE(self, r, v):
-        """Converts carthesian position and velocity vectors to keplerian elements
-        
-        Arguments:
-            r {ndarray} -- Carthesian position vector
-            v {ndarray} -- Carthesian velocity vector
-        
-        Returns:
-            floats -- semi-latus rectum, semi-major axis, eccentricity, inclination, Omega, omega, True Anomaly, (True omega, u, true lambda) [km] [rad]
-        """
-        I = [1, 0, 0]
-        J = [0, 1, 0]
-        K = [0, 0, 1]
-
-        vnorm = np.sqrt(v.dot(v))
-        rnorm = np.sqrt(r.dot(r))
-
-        h = np.cross(r, v)
-        hnorm = np.sqrt(h.dot(h))
-
-        n = np.cross(K, h)
-        nnorm = np.sqrt(n.dot(n))
-
-        e = (( ((vnorm * vnorm)-self.mu/rnorm) * r) - (np.dot(r, v) * v)) / (self.mu)  # is a vector
-        enorm = np.sqrt(e.dot(e))
-
-        eta = (((vnorm * vnorm)/2) - (self.mu/rnorm))
-
-        if enorm != 1.0:
-            a = -self.mu / (2 * eta)
-            p = a * (1 - enorm*enorm)
-        else:
-            p = hnorm*hnorm / self.mu
-            a = inf
-
-        i = acos(h[2]/hnorm)
-
-        # acos should work here instead of np.arccos since Omega should not be an array
-        Omega = acos(n[0]/nnorm)
-        if n[1] < 0:
-            Omega = 2*pi-Omega
-
-        omega = acos(np.dot(n, e)/(nnorm*enorm))
-        if e[2] < 0:
-            omega = 2*pi-omega
-
-        # nu=greek "v" used for poisson ratio
-        trueAnomaly = acos(np.dot(e, r)/(enorm*rnorm))
-        if np.dot(r, v) < 0:
-            trueAnomaly = 2*pi-trueAnomaly
-        
-        omega_true, lambda_true, u = None, None, None
-        if enorm < 1 and i == 0:
-            omega_true = acos(e[1]/enorm)
-            if e[1] < 0:
-                omega_true = 2*pi-omega_true
-        
-        elif enorm == 0 and i != 0:
-            u = acos(np.dot(n, r)/(nnorm*rnorm))
-            if r[2] < 0:
-                u = 2*pi-u
-
-        elif enorm == 0 and i == 0:
-            lambda_true = acos(r[0]/rnorm)
-            if r[1] < 0:
-                lambda_true = 2*pi-lambda_true
-
-        return p, a, enorm, i, Omega, omega, trueAnomaly, omega_true, u, lambda_true
-
-
-    # Vallado ed. 4 Algorithmn 10 page 118
-    def COEtoRV(self, a, e, i, Omega, omega, trueAnomaly, omega_true=None, u=None, lambda_true=None, p=None):
-        """Takes in keplerian elements and outputs carthesian position and velocity vectors
-        
-        Arguments:
-            a {float} -- semi-major axis
-            e {float} -- eccentricity
-            i {float} -- inclination [rad]
-            Omega {float} -- Big Omega [rad]
-            omega {float} -- argument of periapse [rad]
-            trueAnomaly {float} -- True Anomaly [rad]
-        
-        Keyword Arguments:
-            omega_true {float} -- take omega true as input [rad] (default: {None})
-            u {float} -- take omega true as input [rad] (default: {None})
-            lambda_true {float} -- take omega true as input [rad] (default: {None})
-            p {float} -- Take semi latus rectum as an input instead of semi major axis
-        
-        Returns:
-            r, v -- carthesian position and velocity vectors
-        """
-
-        # Semi latus rectum this is different from source material where p is taken as input:
-        # when a p is also given it uses p instead of a for calculations
-        if p is None:
-            p = a * (1 - e*e)
-
-
-        rpqw = np.array([((p * cos(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
-                         ((p * sin(trueAnomaly)) / (1 + (e * cos(trueAnomaly)))),
-                         0])
-
-        vpqw = np.array([-1 * sqrt(self.mu/p) * sin(trueAnomaly),
-                         sqrt(self.mu/p) * (e + cos(trueAnomaly)),
-                         0])
-
-        PQWtoIJKtransform = np.array([[cos(Omega) * cos(omega) - sin(Omega) * sin(omega) * cos(i), -cos(Omega) * sin(omega) - sin(Omega) * cos(omega) * cos(i), sin(Omega) * sin(i)],
-                                      [sin(Omega) * cos(omega) + cos(Omega) * sin(omega) * cos(i), -sin(Omega) * sin(omega) + cos(Omega) * cos(omega) * cos(i), -cos(Omega) * sin(i)],
-                                      [sin(omega) * sin(i), cos(omega) * sin(i), cos(i)]])
-
-        rijk = np.matmul(PQWtoIJKtransform, rpqw)
-        vijk = np.matmul(PQWtoIJKtransform, vpqw)
-        return rijk, vijk
-
 
     def addManoeuvreByVector(self, clock, dv, iterSinceCreation=11):
         '''Adds a direct manoeuvre to the manoeuvre list
@@ -531,7 +551,6 @@ class Body:
                                 "direction": (dv/np.sqrt(dv.dot(dv))),
                                 "manType": "g",
                                 "iterSinceCreation": iterSinceCreation})
-
 
     def addManoeuvreByDirection(self, clock, dvMagnitude, manoeuvreType, iterSinceCreation=11, temp=True):
         """Adds a magnitudal manoeuvre to the manoeuvrelist.
@@ -565,7 +584,7 @@ class Body:
                 manType = "n"
                 dv = dvMagnitude
                 direction = "-"
-        
+
         else:
             # Create dv vector based on manoeuvretype and dvMagnitude
             if (manoeuvreType == "tangential" or manoeuvreType == "t"):
@@ -582,7 +601,8 @@ class Body:
                 manType = "n"
                 directionTangential = self.v / np.sqrt(self.v.dot(self.v))
                 directionRadial = -self.r / np.sqrt(self.r.dot(self.r))
-                directionNormal = np.cross(directionTangential, directionRadial)
+                directionNormal = np.cross(
+                    directionTangential, directionRadial)
                 direction = directionNormal / \
                     np.sqrt(directionNormal.dot(directionNormal))
                 dv = dvMagnitude * direction
@@ -594,3 +614,52 @@ class Body:
                                 "direction": direction,
                                 "manType": manType,
                                 "iterSinceCreation": iterSinceCreation})
+
+
+class PlanetBody(CoreBody):
+    def __init__(self, Planet, rotation=0):
+        super().__init__()
+        # Body variables
+        self.mu = Planet.mu
+        self.r = Planet.radius
+        self.a = Planet.semiMajorAxis
+
+    def refreshByTimestep(self, dt):
+        """Medium level function to refresh the elements of an orbit. \n
+        Adds any acceleration and pertubation effects
+
+        Arguments:\n
+            dt {float} -- Time step
+            atmospheric {bool} -- If the prerequisite parentbody parameters are available perform atmospheric deceleration
+        """
+        self.clock += dt
+        rnew, vnew = self.keplerTime(self.r, self.v, dt)
+        self.initPositionOrbit(rnew, vnew)
+
+    def propagate(self, timeJump, saveFile=None, dt=1):
+        """Highest level function to propagate a body's orbit with time.
+
+        Arguments:
+            timeJump {int} -- The total time in seconds to propage a spacecraft's orbit
+
+        Keyword Arguments:
+            saveFile {string} -- path for CSV savefile, if None: no save is made (default: {None})
+        """
+        rlist = []
+        clocklist = []
+        for deltat in tqdm(range((int(timeJump / abs(dt))) + 1)):
+            self.refreshByTimestep(dt)
+            rlist.append(self.r)
+            clocklist.append(self.clock)
+
+        # Save File in CSV form if path is given
+        if saveFile is not None:
+            # Create a runs folder if it does not exist.
+            if not os.path.exists("runs"):
+                os.makedirs("runs")
+            # Save position data
+            rlist = np.array(rlist).T
+            data = pd.DataFrame(
+                {"clock": clocklist, "x": rlist[0], "y": rlist[1], "z": rlist[2]})
+            data.to_csv(saveFile, sep=",")
+
