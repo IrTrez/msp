@@ -77,3 +77,61 @@ def quickAnimate(speed, dataFile, Body=None, bodyColor="cyan", plotLimits=30000)
         plt.pause(0.0000000001)
         plt.clf
     plt.pause(5)
+
+
+def quickAnimateFollow(speed, dataFile, Body=None, bodyColor="cyan", plotLimits=30000):
+    plt.style.use('seaborn-pastel')
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    if Body is not None:
+        assert (type(Body) == msp.Planet), "Incorrect Body type, should be main.Planet"
+        # Sphere:
+        u = np.linspace(0, 2 * np.pi, 100)
+        v = np.linspace(0, np.pi, 100)
+        Xbody = Body.r * np.outer(np.cos(u), np.sin(v))
+        Ybody = Body.r * np.outer(np.sin(u), np.sin(v))
+        Zbody = Body.r * np.outer(np.ones(np.size(u)), np.cos(v))
+
+
+    data = pd.read_csv(dataFile, index_col=0)
+    droppedPoints = []
+    for u in range(len(data)):
+        if u % speed != 0:
+            droppedPoints.append(u)
+
+    data = data.drop(droppedPoints, axis=0)
+    clock = data.loc[:, "clock"].to_numpy()
+    x = data.loc[:, "x"].to_numpy()
+    y = data.loc[:, "y"].to_numpy()
+    z = data.loc[:, "z"].to_numpy()
+
+    manoeuvreFile = dataFile[:-4] + "_man.csv"
+    showManoeuvres = True if os.path.isfile(manoeuvreFile) else False
+    if showManoeuvres:
+        manoeuvreData = pd.read_csv((manoeuvreFile), index_col="ID")
+
+    for u in tqdm(range(len(x))):
+        ax = fig.add_subplot(111, projection='3d')
+        currentClock = clock[u]
+        # Current coordinates
+        Xu, Yu, Zu = x[u], y[u], z[u]
+        if Body is not None:
+            XbodyU = Xbody + Xu
+            YbodyU = Ybody + Yu
+            ZbodyU = Zbody + Zu
+            ax.plot_surface(XbodyU, YbodyU, ZbodyU, color=bodyColor)
+        
+        ax.plot(x[0:u], y[0:u], z[0:u], color="g", lw=1)
+        ax.set_xlim(Xu - plotLimits, Xu + plotLimits)
+        ax.set_ylim(Yu - plotLimits, Yu + plotLimits)
+        ax.set_zlim(Zu - plotLimits, Zu + plotLimits)
+
+        ax.quiver(Xu, Yu, Zu, 0,0,0, normalize=True, length=200000)
+        ax.quiver(0,0,0, Xu, Yu, Zu, normalize=True, length=200000)
+        
+        # print(x[-u]-Xu)
+        plt.pause(0.0000000000000000000000000000001)
+        if u != len(x):
+            plt.clf()
+    plt.pause(5)
