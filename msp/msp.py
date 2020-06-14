@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from tqdm import tqdm as tqdm
 from math import acos, cos, cosh, asin, sin, sinh, exp, acosh, asinh, copysign,\
-    sqrt, pi, inf, radians
+    sqrt, pi, inf, radians, degrees
 
 
 class Atmosphere:
@@ -350,7 +350,7 @@ class CoreBody:
         vijk = np.matmul(PQWtoIJKtransform, vpqw)
         return rijk, vijk
 
-class SpaceCraftBody(CoreBody):
+class SpacecraftBody(CoreBody):
     def __init__(self, parentBody, mass, DragCoeff=0, surfaceArea=0):
         super().__init__()
         self.mu = parentBody.mu
@@ -621,8 +621,9 @@ class PlanetBody(CoreBody):
         super().__init__()
         # Body variables
         self.mu = Planet.mu
-        self.r = Planet.radius
-        self.a = Planet.semiMajorAxis
+        self.r = Planet.r
+        self.a = Planet.a
+        self.parentRadius = 0
 
     def refreshByTimestep(self, dt):
         """Medium level function to refresh the elements of an orbit. \n
