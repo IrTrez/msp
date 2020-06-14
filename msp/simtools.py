@@ -28,9 +28,9 @@ def quickAnimate(speed, dataFile, Body=None, bodyColor="cyan", plotLimits=30000)
         # Plot the surface
         ax.plot_surface(x, y, z, color=str(bodyColor))
     
-    ax.set_ylim(-30000, 30000)
-    ax.set_xlim(-30000, 30000)
-    ax.set_zlim(-30000, 30000)
+    ax.set_ylim(-plotLimits, plotLimits)
+    ax.set_xlim(-plotLimits, plotLimits)
+    ax.set_zlim(-plotLimits, plotLimits)
 
     data = pd.read_csv(dataFile, index_col=0)
     droppedPoints = []
